@@ -1,0 +1,26 @@
+# This file should be included when you package your plugin.
+# Mandatory items:
+
+[general]
+name=FitxaUrban
+qgisMinimumVersion=3.0
+description=Creació d'una fitxa urbanistica de la parcela seleccionada.
+about=Aquest plugin crea una fitxa urbanistica per una parcela mostrant dades urbanistiques, classificacio del sol, sectors o ambits a desenvolupar, zonificacio i condicions de edificabilitat. Es mostra un resum en un formulari i es creen PDF's amb dades de la parcela i condicions de edificiabilitat i usos admesos.
+version=2.0
+author=PSIG
+email=admin@psig.es
+
+# Tags are comma separated with spaces allowed
+tags=catastro, gml, parcela, segregacion, matriz
+
+homepage=
+tracker=file:///Users/PEP/Documents/PSIGsoft/FitxaUrban/Fonts
+repository=file:///Users/PEP/Documents/PSIGsoft/FitxaUrban/Fonts
+category=Plugins
+icon=FitxaUrban.png
+
+# experimental flag
+experimental=False
+
+# deprecated flag (applies to the whole plugin, not just a single version)
+deprecated=False
