@@ -12,3 +12,5 @@ build/
 .idea/workspace.xml
 .idea/
 __pycache__
+Thumbs.db
+img/Thumbs.db

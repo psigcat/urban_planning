@@ -55,7 +55,7 @@ class FitxaUrban:
         self.settings = QSettings("PSIG", "FitxaUrban")
 
         # Find and safe the plugin's icon
-        filename = os.path.abspath(os.path.join(self.plugin_dir, 'FitxaUrban_logo.png'))
+        filename = os.path.abspath(os.path.join(self.plugin_dir, "img", "FitxaUrban_logo.png"))
         self.icon = QIcon(str(filename))
         self.action = None
         self.dialog = None
@@ -85,7 +85,7 @@ class FitxaUrban:
         d = QDir(self.dir_pdfs)
         if d.exists() == 0 :
             if d.mkdir(self.dir_pdfs) == 0 :
-                self.Missatge("C",self.tr("No s'ha pogut crear carpeta directori pdf's\n\n"+sself.dir_pdfs))
+                self.Missatge("C",self.tr("No s'ha pogut crear carpeta directori pdf's\n\n"+self.dir_pdfs))
                 return
         if self.Config("DIR_PDFS_MULTI") == "SI" :
             nl = self.tr(socket.gethostname()+"("+time.strftime("%d")+")_")
@@ -539,17 +539,22 @@ class FitxaUrban:
         # messageBox.setWindowIcon(self.icon)
         # messageBox.exec_()
 
+
 class FitxaUrbanTool(QgsMapTool):
+
     def __init__(self, canvas, plugin):
+
         super(QgsMapTool, self).__init__(canvas)
         self.canvas = canvas
         self.plugin = plugin
         k = ""
         if str(self.plugin.CONFIG).find("ARXIU_PUNTER"+" = ") != -1 : k = str(self.plugin.CONFIG).split("ARXIU_PUNTER"+" = ")[1].split("\n")[0]
-        if k.strip() == "" : k=os.path.join(self.plugin.plugin_dir,"FitxaUrban_punter.png")
+        if k.strip() == "" : k=os.path.join(self.plugin.plugin_dir, "img", "FitxaUrban_punter.png")
         self.setCursor(QCursor(QPixmap(k), 1, 1))
 
+
     def canvasReleaseEvent(self, e):  # Activate config layer
+
         k = ""
         if self.plugin.CONFIG.find("LAYER_NAME"+" = ") != -1 : k = self.plugin.CONFIG.split("LAYER_NAME"+" = ")[1].split("\n")[0]
         if k != "" :
