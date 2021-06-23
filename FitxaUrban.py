@@ -12,7 +12,6 @@ from qgis.gui import QgsMapTool
 import os, sys, subprocess, socket, time, glob, sip
 
 from .PyPDF2 import PdfFileMerger, PdfFileReader
-from .resources import *
 from .ui.FitxaUrban_dialog import Ui_FitxaUrbanDialog
 from .ui.FitxaUrban_vista import Ui_FitxaUrbanVista
 
