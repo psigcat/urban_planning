@@ -108,7 +108,8 @@ class FitxaUrban:
         # Obrir PostgreSQL i preparar queries
         self.SQL_FITXA = ""
         ff = self.Config("ARXIU_SQL")
-        if ff.strip() == "" : ff = str(os.path.join(self.project_folder,"FitxaUrban_sql.txt"))
+        if ff.strip() == "":
+            ff = str(os.path.join(self.project_folder, "config", "FitxaUrban_sql.txt"))
         f = open(self.tr(ff), 'r')
         if f.closed :
             self.Missatge("C",self.tr("Error al llegir \n\n"+ff))
@@ -118,8 +119,7 @@ class FitxaUrban:
         f.close()
         self.SQL_FITXA_ZONA = ""
         ff = self.Config("ARXIU_SQL_ZONA")
-        if ff.strip() == "" : ff = str(os.path.join(self.project_folder,"FitxaUrban_sql.txt"))
-        ff = str(os.path.join(self.project_folder,"FitxaUrban_sql_zona.txt"))
+        if ff.strip() == "" : ff = str(os.path.join(self.project_folder, "config", "FitxaUrban_sql_zona.txt"))
         f = open(self.tr(ff), 'r')
         if f.closed :
             self.Missatge("C",self.tr("Error al llegir \n\n"+ff))
@@ -147,11 +147,18 @@ class FitxaUrban:
         self.BD_OPEN = "SI"
         self.PREPAR = "SI"
 
-    def llegirConfig(self): # Llegir arxiu configuracio del directori del projecte
-        if not QgsProject.instance().title() : return ""
+
+    def llegirConfig(self):
+        """ Llegir arxiu configuracio del directori del projecte """
+
+        if not QgsProject.instance().title():
+            return ""
+
         self.project_folder = QgsProject.instance().homePath()
-        if not self.project_folder : return ""
-        ff = str(os.path.join(self.project_folder,"FitxaUrban_config.txt"))
+        if not self.project_folder:
+            return ""
+
+        ff = str(os.path.join(self.project_folder, "config", "FitxaUrban_config.txt"))
         f = open(self.tr(ff),"r",encoding="ISO-8859-1")
         if f.closed :
             self.Missatge("C",self.tr("Error al llegir arxiu configuració\n\n"+ff))
