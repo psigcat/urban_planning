@@ -290,7 +290,7 @@ class Ui_FitxaUrbanDialog(object):
         self.label_5 = QtWidgets.QLabel(FitxaUrbanDialog)
         self.label_5.setGeometry(QtCore.QRect(10, 10, 231, 50))
         self.label_5.setText("")
-        self.label_5.setPixmap(QtGui.QPixmap("img/ESC0401.png"))
+        self.label_5.setPixmap(QtGui.QPixmap("../img/ESC0401.png"))
         self.label_5.setScaledContents(True)
         self.label_5.setObjectName("label_5")
         self.gbSector = QtWidgets.QGroupBox(FitxaUrbanDialog)

@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
-from PyQt5.QtCore import QCoreApplication, QObject, QSettings, Qt, QUrl, pyqtSignal, QDir
-from PyQt5.QtGui import QCursor, QIcon, QPainter, QPixmap
-from PyQt5.QtWidgets import QAction, QApplication,  QDialog, QFileDialog, QMessageBox
+from PyQt5.QtCore import QCoreApplication, QSettings, Qt, QUrl, QDir
+from PyQt5.QtGui import QCursor, QIcon, QPixmap
+from PyQt5.QtWidgets import QAction, QDialog, QFileDialog, QMessageBox
 from PyQt5.QtPrintSupport import QPrinter
 from PyQt5.QtSql import *
 
-from qgis.core import QgsApplication, QgsExpressionContextUtils, QgsFeature, QgsGeometry, QgsMessageLog, QgsProject, QgsLayoutExporter
+from qgis.core import QgsExpressionContextUtils, QgsFeature, QgsGeometry, QgsMessageLog, QgsProject, QgsLayoutExporter
 from qgis.core import QgsRectangle, QgsLayoutItemMap, QgsLayoutMultiFrame, QgsLayoutFrame, QgsLayoutItemLegend
-from qgis.gui import QgsMapTool, QgsMessageBar
+from qgis.gui import QgsMapTool
 
-import io, os, sys, subprocess, socket, time, glob, sip
+import os, sys, subprocess, socket, time, glob, sip
 
 from .PyPDF2 import PdfFileMerger, PdfFileReader
 from .resources import *
-from .FitxaUrban_dialog import Ui_FitxaUrbanDialog
-from .FitxaUrban_vista import Ui_FitxaUrbanVista
+from .ui.FitxaUrban_dialog import Ui_FitxaUrbanDialog
+from .ui.FitxaUrban_vista import Ui_FitxaUrbanVista
 
 global db
 
