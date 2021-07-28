@@ -482,9 +482,13 @@ class FitxaUrban:
                     nl = ""
                     if self.Config("DIR_PDFS_MULTI") == "SI":
                         nl = self.tr(socket.gethostname() + "(" + time.strftime("%d")+")_")
-                    filename =os.path.join(self.dir_pdfs, '{}{}_zona_{}.pdf'.format(nl,self.refcat,str(qu.value(0))))
+                    filename = os.path.join(self.dir_pdfs, '{}{}_zona_{}.pdf'.format(nl,self.refcat, str(qu.value(0))))
                     exporter = QgsLayoutExporter(composition)                
-                    exporter.exportToPdf(filename,QgsLayoutExporter.PdfExportSettings())                    
+                    result, error = exporter.exportToPdf(filename, QgsLayoutExporter.PdfExportSettings())
+                    if result == QgsLayoutExporter.Success:
+                        self.Missatge("I", self.tr("Fitxer generat correctament"))
+                    else:
+                        self.Missatge("W", error)
                     if self.Config("PDF_ZONES_VISU") != "1":
                         openFile(filename)
                     lispdfs.append(filename)
