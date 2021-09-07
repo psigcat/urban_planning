@@ -402,6 +402,7 @@ class FitxaUrban:
             moveLayer(vl, 0)
 
             def refreshed():
+
                 # Disconnect signal
                 self.iface.mapCanvas().mapCanvasRefreshed.disconnect(refreshed)
                 composition = None
@@ -447,8 +448,7 @@ class FitxaUrban:
 
             global db
             qu = QSqlQuery(db) 
-            sql = self.SQL_FITXA_ZONA.split("$ID_VALUE")[0]+str(self.id_selec)+self.SQL_FITXA_ZONA.split("$ID_VALUE")[1]
-            #print(sql)
+            sql = self.SQL_FITXA_ZONA.split("$ID_VALUE")[0] + str(self.id_selec) + self.SQL_FITXA_ZONA.split("$ID_VALUE")[1]
             if qu.exec_(sql) == 0:
                 self.Missatge("C", self.tr("Error al llegir informació per fitxa zona\n\n"+qu.lastError().text()))
                 qu.clear()
@@ -482,13 +482,17 @@ class FitxaUrban:
                     nl = ""
                     if self.Config("DIR_PDFS_MULTI") == "SI":
                         nl = self.tr(socket.gethostname() + "(" + time.strftime("%d")+")_")
-                    filename = os.path.join(self.dir_pdfs, '{}{}_zona_{}.pdf'.format(nl,self.refcat, str(qu.value(0))))
-                    exporter = QgsLayoutExporter(composition)                
-                    result, error = exporter.exportToPdf(filename, QgsLayoutExporter.PdfExportSettings())
+                    filename = os.path.join(self.dir_pdfs, '{}{}_zona_{}.pdf'.format(nl, self.refcat, str(qu.value(0))))
+                    exporter = QgsLayoutExporter(composition)
+                    if exporter is None:
+                        self.Missatge("W", "Exporter is None")
+                        return
+
+                    result = exporter.exportToPdf(filename, QgsLayoutExporter.PdfExportSettings())
                     if result == QgsLayoutExporter.Success:
                         self.Missatge("I", self.tr("Fitxer generat correctament"))
                     else:
-                        self.Missatge("W", error)
+                        self.Missatge("W", "error")
                     if self.Config("PDF_ZONES_VISU") != "1":
                         openFile(filename)
                     lispdfs.append(filename)
