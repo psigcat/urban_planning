@@ -63,7 +63,7 @@ class FitxaUrban:
         d = QDir(self.dir_pdfs)
         if d.exists() == 0 :
             if d.mkdir(self.dir_pdfs) == 0 :
-                self.Missatge("C",self.tr("No s'ha pogut crear carpeta directori pdf's\n\n"+self.dir_pdfs))
+                self.Missatge("C", self.tr("No s'ha pogut crear carpeta directori pdf's\n\n"+self.dir_pdfs))
                 return
         if self.Config("DIR_PDFS_MULTI") == "SI":
             nl = self.tr(socket.gethostname()+"("+time.strftime("%d")+")_")
@@ -73,7 +73,8 @@ class FitxaUrban:
                     try:
                         os.remove(uf)
                     except OSError:
-                        pass                   
+                        pass
+
         self.dir_html = self.Config("DIR_HTML")
         if self.dir_html == "":
             self.dir_html = os.path.join(self.project_folder, 'html')
@@ -94,7 +95,7 @@ class FitxaUrban:
             ff = str(os.path.join(self.project_folder, "config", "FitxaUrban_sql.txt"))
         f = open(self.tr(ff), 'r')
         if f.closed :
-            self.Missatge("C",self.tr("Error al llegir \n\n"+ff))
+            self.Missatge("C", self.tr("Error al llegir \n\n"+ff))
             return
         for reg in f :
             self.SQL_FITXA += reg
@@ -105,7 +106,7 @@ class FitxaUrban:
             ff = str(os.path.join(self.project_folder, "config", "FitxaUrban_sql_zona.txt"))
         f = open(self.tr(ff), 'r')
         if f.closed :
-            self.Missatge("C",self.tr("Error al llegir \n\n"+ff))
+            self.Missatge("C", self.tr("Error al llegir \n\n"+ff))
             return
         for reg in f :
             self.SQL_FITXA_ZONA += reg
@@ -126,8 +127,9 @@ class FitxaUrban:
             db.setConnectOptions("service="+self.Config("BD_SERVICE"))
         db.open()
         if db.isOpen() == 0 :
-            self.Missatge("C",self.tr("No s'ha pogut obrir la Base de Dades\n\n'"+db.lastError().text()))
+            self.Missatge("C", self.tr("No s'ha pogut obrir la Base de Dades\n\n'"+db.lastError().text()))
             return
+
         self.BD_OPEN = "SI"
         self.PREPAR = "SI"
 
@@ -142,17 +144,23 @@ class FitxaUrban:
         if not self.project_folder:
             return ""
 
-        ff = str(os.path.join(self.project_folder, "config", "FitxaUrban_config.txt"))
-        f = open(self.tr(ff),"r",encoding="ISO-8859-1")
-        if f.closed:
-            self.Missatge("C",self.tr("Error al llegir arxiu configuració\n\n"+ff))
+        config_path = str(os.path.join(self.project_folder, "config", "FitxaUrban_config.txt"))
+        if not os.path.exists(config_path):
+            self.Missatge("C", f"File not found: {config_path}")
             return ""
+
+        f = open(config_path, "r", encoding="ISO-8859-1")
+        if f.closed:
+            self.Missatge("C", self.tr("Error al llegir arxiu configuració\n\n"+ff))
+            return ""
+
         conf = ""
         for reg in f :
             if len(reg) > 5 :
                 if reg[0] != "#" and reg.find(" = ") != -1:
-                    conf +=reg.strip()+"\n"
+                    conf += reg.strip()+"\n"
         f.close()
+
         return conf
 
 
@@ -242,13 +250,13 @@ class FitxaUrban:
         m = QMessageBox()
         if av == "W" :
             m.setIcon(QMessageBox.Warning)
-            z="Atenció"
+            z = "Atenció"
         elif av == "C" :
             m.setIcon(QMessageBox.Critical)
-            z="Error"
+            z = "Error"
         else :
             m.setIcon(QMessageBox.Information)
-            z="Avís"
+            z = "Avís"
         m.setWindowTitle(z)
         m.setText(t)
         m.setStandardButtons(QMessageBox.Ok)
@@ -263,19 +271,19 @@ class FitxaUrban:
             self.PREPAR = "SI"
             self.Preparar()
             if self.BD_OPEN == "NO" :
-                self.Missatge("C",self.tr("Errors en la preparació del plugin per al projecte"))
+                self.Missatge("C", self.tr("Errors en la preparació del plugin per al projecte"))
                 return
 
         # Get the active layer (where the selected form is).
         layer = self.iface.activeLayer()
         if layer is None :
-            self.Missatge("C",self.tr("No hi ha layer activat"))
+            self.Missatge("C", self.tr("No hi ha layer activat"))
             return
 
         # single feature
         features = layer.selectedFeatures()
         if len(features) < 1:
-            self.Missatge("C",self.tr("No s'ha seleccionat res"))
+            self.Missatge("C", self.tr("No s'ha seleccionat res"))
             return
 
         if len(features) > 1:
@@ -283,7 +291,7 @@ class FitxaUrban:
         feature = features[0]
         id_index = feature.fieldNameIndex(self.Config("ID_NAME"))
         if id_index < 0:
-            self.Missatge("C",self.tr("Manca paràmetre ID_INDEX"))
+            self.Missatge("C", self.tr("Manca paràmetre ID_INDEX"))
             return
 
         self.id_selec = feature[id_index]
@@ -292,13 +300,13 @@ class FitxaUrban:
         qu = QSqlQuery(db) 
         sq = self.SQL_FITXA.split("$ID_VALUE")[0]+str(self.id_selec)+self.SQL_FITXA.split("$ID_VALUE")[1]
         if qu.exec_(sq) == 0:
-            self.Missatge("C",self.tr("Error al llegir informació per fitxa\n\n"+qu.lastError().text()))
+            self.Missatge("C", self.tr("Error al llegir informació per fitxa\n\n"+qu.lastError().text()))
             return
         if qu.next() == 0:
-            self.Missatge("C",self.tr("No s'ha trobat informació per fitxa\n\n"+qu.lastError().text()))
+            self.Missatge("C", self.tr("No s'ha trobat informació per fitxa\n\n"+qu.lastError().text()))
             return
         if qu.value(0) is None:
-            self.Missatge("C",self.tr("No s'ha trobat informació per la fitxa"))
+            self.Missatge("C", self.tr("No s'ha trobat informació per la fitxa"))
             return
 
         # Make dialog and set its atributes
@@ -375,7 +383,9 @@ class FitxaUrban:
                 lblOrd.linkActivated.connect(self.webDialog)
             except IndexError:
                 lblOrd.setHidden(True)
+
         qu.clear()
+
         self.dialog.show()
 
 
@@ -519,7 +529,6 @@ class FitxaUrban:
         self.dialog.ui.btnClauPdf_1.clicked.connect(makeShowZonesPdf)
         self.dialog.destroyed.connect(destroyDialog)
 
-        # SHow the dialog (execute it)
         self.dialog.exec_()
 
 
@@ -582,13 +591,7 @@ class FitxaUrban:
 
 
     def error(self, msg):
-        # The QGis documentation recommends using the more user-friendly QGIS Message Bar
-        # instead of modal message boxes to show information to the user
         self.iface.messageBar().pushCritical("Error", msg)
-
-        # messageBox = QMessageBox(QMessageBox.Critical, tr("Error"), msg)
-        # messageBox.setWindowIcon(self.icon)
-        # messageBox.exec_()
 
 
 class FitxaUrbanTool(QgsMapTool):
@@ -619,6 +622,7 @@ class FitxaUrbanTool(QgsMapTool):
         layer = self.canvas.currentLayer()
         if layer is None:
             return
+
         point = e.mapPoint()
         radius = self.canvas.mapUnitsPerPixel()
         rect = QgsRectangle(point.x(), point.y(), point.x() + radius, point.y() + radius)
@@ -626,7 +630,7 @@ class FitxaUrbanTool(QgsMapTool):
         self.plugin.run()
 
 
-# Utilities
+# region Utilities
 
 def openFile(path):
     """Opens a file with the default application."""
@@ -704,3 +708,4 @@ def layout_item(layout, item_id, item_class):
         # force sip to correctly cast item to required type
         return sip.cast(item, item_class)
 
+# endregion
