@@ -279,25 +279,103 @@ class FitxaUrban:
         m.exec_()
 
 
+    def create_pdf_zones(self):
+
+        global db
+        qu = QSqlQuery(db)
+        sql = f"{self.SQL_FITXA_ZONA.split('$ID_VALUE')[0]}{self.id_selec}{self.SQL_FITXA_ZONA.split('$ID_VALUE')[1]}"
+        if qu.exec_(sql) == 0:
+            msg = f"Error al llegir informació per fitxa zona\n\n{qu.lastError().text()}"
+            self.Missatge("C", msg)
+            qu.clear()
+            return
+
+        camps = self.Config("ZONES_ITEMS")
+        per_int = qu.record().indexOf(self.Config("ZONA_AREA_%_NAME"))
+        per_min = int(self.Config("ZONA_AREA_%_MINIM"))
+        lispdfs = []
+        while qu.next():
+            if qu.value(per_int) >= per_min:
+                composition = None
+                for item in QgsProject.instance().layoutManager().printLayouts():
+                    if item.name() == self.Config("PDF_ZONES") :
+                        composition = item
+                        break
+                if composition is None :
+                    self.Missatge("C", "No s'ha trobat plantilla fitxa en el projecte")
+                    return
+
+                total = qu.record().count()
+                for i in range(total):
+                    QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), camps.split(",")[i], qu.value(i))
+                    if self.sector_codi != "NULL":
+                        QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),
+                            self.Config("DESCR_SECTOR_ITEM"), f'{self.sector_codi} - {self.sector_desc}')
+                    else:
+                        QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),
+                            self.Config("DESCR_SECTOR_ITEM"), None)
+
+                QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),
+                    self.Config("DESCR_CLASSI_ITEM"), f'{self.classi_codi} - {self.classi_desc}')
+                composition.refresh()
+                nl = ""
+                if self.Config("DIR_PDFS_MULTI") == "SI":
+                    nl = self.tr(socket.gethostname() + "(" + time.strftime("%d")+")_")
+
+                filename = f'{nl}{self.refcat}_zona_{qu.value(0)}.pdf'
+                filepath = os.path.join(self.dir_pdfs, filename)
+                exporter = QgsLayoutExporter(composition)
+                if exporter is None:
+                    self.Missatge("W", "Exporter is None")
+                    return
+
+                result = exporter.exportToPdf(filepath, QgsLayoutExporter.PdfExportSettings())
+                if result == QgsLayoutExporter.Success:
+                    self.log_info(f"Fitxer generat correctament: {filename}")
+                else:
+                    self.Missatge("W", "error")
+                if self.Config("PDF_ZONES_VISU") != "1":
+                    openFile(filepath)
+                lispdfs.append(filepath)
+
+        qu.clear()
+
+
+    def create_merged_pdf(self, lispdfs):
+        """ Create a PDF that includes all 'zones' """
+
+        merger = PdfFileMerger()
+        for file in lispdfs:
+            merger.append(PdfFileReader(file))
+        nl = ""
+        if self.Config("DIR_PDFS_MULTI") == "SI":
+            nl = self.tr(socket.gethostname() + "(" + time.strftime("%d") + ")_")
+        filename = f'{nl}{self.refcat}_zones.pdf'
+        filepath = os.path.join(self.dir_pdfs, filename)
+        merger.write(filepath)
+        if self.Config("PDF_ZONES_VISU") != "2":
+            openFile(filepath)
+
+
     def run(self):
 
         if self.PREPAR == "NO":
             self.PREPAR = "SI"
             self.Preparar()
             if self.BD_OPEN == "NO" :
-                self.Missatge("C", self.tr("Errors en la preparació del plugin per al projecte"))
+                self.Missatge("C", "Errors en la preparació del plugin per al projecte")
                 return
 
         # Get the active layer (where the selected form is).
         layer = self.iface.activeLayer()
         if layer is None :
-            self.Missatge("C", self.tr("No hi ha layer activat"))
+            self.Missatge("C", "No hi ha layer activat")
             return
 
         # single feature
         features = layer.selectedFeatures()
         if len(features) < 1:
-            self.Missatge("C", self.tr("No s'ha seleccionat res"))
+            self.Missatge("C", "No s'ha seleccionat res")
             return
 
         if len(features) > 1:
@@ -305,7 +383,7 @@ class FitxaUrban:
         feature = features[0]
         id_index = feature.fieldNameIndex(self.Config("ID_NAME"))
         if id_index < 0:
-            self.Missatge("C", self.tr("Manca paràmetre ID_INDEX"))
+            self.Missatge("C", "Manca paràmetre ID_INDEX")
             return
 
         self.id_selec = feature[id_index]
@@ -314,13 +392,13 @@ class FitxaUrban:
         qu = QSqlQuery(db) 
         sq = self.SQL_FITXA.split("$ID_VALUE")[0]+str(self.id_selec)+self.SQL_FITXA.split("$ID_VALUE")[1]
         if qu.exec_(sq) == 0:
-            self.Missatge("C", self.tr("Error al llegir informació per fitxa\n\n"+qu.lastError().text()))
+            self.Missatge("C", "Error al llegir informació per fitxa\n\n"+qu.lastError().text())
             return
         if qu.next() == 0:
-            self.Missatge("C", self.tr("No s'ha trobat informació per fitxa\n\n"+qu.lastError().text()))
+            self.Missatge("C", "No s'ha trobat informació per fitxa\n\n"+qu.lastError().text())
             return
         if qu.value(0) is None:
-            self.Missatge("C", self.tr("No s'ha trobat informació per la fitxa"))
+            self.Missatge("C", "No s'ha trobat informació per la fitxa")
             return
 
         # Make dialog and set its atributes
@@ -467,86 +545,6 @@ class FitxaUrban:
             self.iface.mapCanvas().mapCanvasRefreshed.connect(refreshed)
             self.iface.mapCanvas().refresh()
 
-
-        def makeShowZonesPdf():
-
-            global db
-            qu = QSqlQuery(db) 
-            sql = f"{self.SQL_FITXA_ZONA.split('$ID_VALUE')[0]}{self.id_selec}{self.SQL_FITXA_ZONA.split('$ID_VALUE')[1]}"
-            if qu.exec_(sql) == 0:
-                msg = f"Error al llegir informació per fitxa zona\n\n{qu.lastError().text()}"
-                self.Missatge("C", msg)
-                qu.clear()
-                return
-
-            camps = self.Config("ZONES_ITEMS")
-            per_int = qu.record().indexOf(self.Config("ZONA_AREA_%_NAME"))
-            per_min = int(self.Config("ZONA_AREA_%_MINIM"))
-            lispdfs = []
-            while qu.next():
-                if qu.value(per_int) >= per_min:
-                    composition = None
-                    for item in QgsProject.instance().layoutManager().printLayouts():
-                        if item.name() == self.Config("PDF_ZONES") :
-                            composition = item
-                            break
-                    if composition is None :
-                        self.Missatge("C", "No s'ha trobat plantilla fitxa en el projecte")
-                        return
-
-                    total = qu.record().count()
-                    for i in range(total):
-                        QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), camps.split(",")[i], qu.value(i))
-                        if self.sector_codi != "NULL":
-                            QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),
-                                self.Config("DESCR_SECTOR_ITEM"), f'{self.sector_codi} - {self.sector_desc}')
-                        else:
-                            QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),
-                                self.Config("DESCR_SECTOR_ITEM"), None)
-
-                    QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),
-                        self.Config("DESCR_CLASSI_ITEM"), f'{self.classi_codi} - {self.classi_desc}')
-                    composition.refresh()
-                    nl = ""
-                    if self.Config("DIR_PDFS_MULTI") == "SI":
-                        nl = self.tr(socket.gethostname() + "(" + time.strftime("%d")+")_")
-
-                    filename = f'{nl}{self.refcat}_zona_{qu.value(0)}.pdf'
-                    filepath = os.path.join(self.dir_pdfs, filename)
-                    exporter = QgsLayoutExporter(composition)
-                    if exporter is None:
-                        self.Missatge("W", "Exporter is None")
-                        return
-
-                    result = exporter.exportToPdf(filepath, QgsLayoutExporter.PdfExportSettings())
-                    if result == QgsLayoutExporter.Success:
-                        self.log_info(f"Fitxer generat correctament: {filename}")
-                    else:
-                        self.Missatge("W", "error")
-                    if self.Config("PDF_ZONES_VISU") != "1":
-                        openFile(filepath)
-                    lispdfs.append(filepath)
-
-            qu.clear()
-
-            create_merged_pdf(lispdfs)
-
-
-        def create_merged_pdf(lispdfs):
-            """ Create a PDF that includes all 'zones' """
-
-            merger = PdfFileMerger()
-            for file in lispdfs:
-                merger.append(PdfFileReader(file))
-            nl = ""
-            if self.Config("DIR_PDFS_MULTI") == "SI":
-                nl = self.tr(socket.gethostname() + "(" + time.strftime("%d") + ")_")
-            filename = f'{nl}{self.refcat}_zones.pdf'
-            filepath = os.path.join(self.dir_pdfs, filename)
-            merger.write(filepath)
-            if self.Config("PDF_ZONES_VISU") != "2":
-                openFile(filepath)
-
             
         def destroyDialog():
             self.dialog = None
@@ -554,7 +552,7 @@ class FitxaUrban:
         # Connect the click signal to the functions
         self.dialog.ui.lblClass.linkActivated.connect(self.webDialog)
         self.dialog.ui.btnParcelaPdf.clicked.connect(makeShowUbicacioPdf)
-        self.dialog.ui.btnClauPdf_1.clicked.connect(makeShowZonesPdf)
+        self.dialog.ui.btnClauPdf_1.clicked.connect(self.create_pdf_zones)
         self.dialog.destroyed.connect(destroyDialog)
 
         self.dialog.exec_()
