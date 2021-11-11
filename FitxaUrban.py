@@ -5,8 +5,8 @@ from PyQt5.QtWidgets import QAction, QDialog, QFileDialog, QMessageBox
 from PyQt5.QtPrintSupport import QPrinter
 from PyQt5.QtSql import *
 
-from qgis.core import QgsExpressionContextUtils, QgsFeature, QgsGeometry, QgsMessageLog, QgsProject, QgsLayoutExporter
-from qgis.core import QgsRectangle, QgsLayoutItemMap, QgsLayoutMultiFrame, QgsLayoutFrame, QgsLayoutItemLegend
+from qgis.core import QgsExpressionContextUtils, QgsFeature, QgsGeometry, QgsMessageLog, QgsProject, QgsLayoutExporter, \
+    QgsRectangle, QgsLayoutItemMap, QgsLayoutMultiFrame, QgsLayoutFrame, QgsLayoutItemLegend
 from qgis.gui import QgsMapTool
 
 import os, sys, subprocess, socket, time, glob, sip
@@ -22,15 +22,24 @@ class FitxaUrban:
 
     def __init__(self, iface):
 
-        # Saving iface to be reachable from the other functions
         self.iface = iface
+        self.plugin_dir = None
+        self.pluginName = None
+        self.settings = None
+        self.action = None
+        self.dialog = None
+        self.BD_OPEN = None
+        self.PREPAR = None
+        self.CONFIG = None
+        self.dtop = 0
+        self.dleft = 0
+
+
+    def initGui(self):
+
         self.plugin_dir = os.path.dirname(__file__)
         self.pluginName = os.path.basename(self.plugin_dir)
         self.settings = QSettings("PSIG", "FitxaUrban")
-
-        # Find and safe the plugin's icon
-        filename = os.path.abspath(os.path.join(self.plugin_dir, "img", "FitxaUrban_logo.png"))
-        self.icon = QIcon(str(filename))
         self.action = None
         self.dialog = None
         self.BD_OPEN = "NO"
@@ -38,6 +47,16 @@ class FitxaUrban:
         self.CONFIG = self.llegirConfig()
         self.dtop = 0
         self.dleft = 0
+
+        filename = os.path.abspath(os.path.join(self.plugin_dir, "img", "FitxaUrban_logo.png"))
+        self.icon = QIcon(str(filename))
+        self.tool = FitxaUrbanTool(self.iface.mapCanvas(), self)
+        self.action = QAction(self.icon, u"FitxaUrban", self.iface.mainWindow())
+        self.action.setCheckable(True)
+        self.action.triggered.connect(self.activateTool)
+        self.iface.addToolBarIcon(self.action)
+        self.iface.addPluginToMenu(u"FichaUrban", self.action)
+        self.iface.mapCanvas().mapToolSet.connect(self.deactivateTool)
 
 
     def Preparar(self):
@@ -100,6 +119,7 @@ class FitxaUrban:
         for reg in f :
             self.SQL_FITXA += reg
         f.close()
+
         self.SQL_FITXA_ZONA = ""
         ff = self.Config("ARXIU_SQL_ZONA")
         if ff.strip() == "":
@@ -111,6 +131,7 @@ class FitxaUrban:
         for reg in f :
             self.SQL_FITXA_ZONA += reg
         f.close()
+
         global db
         if self.BD_OPEN == "SI" :
             db.close()
@@ -172,18 +193,6 @@ class FitxaUrban:
         return value
 
 
-    def initGui(self):
-
-        self.tool = FitxaUrbanTool(self.iface.mapCanvas(), self)
-        # Add menu and toolbar entries (basically allows to activate it)
-        self.action = QAction(self.icon, u"FitxaUrban", self.iface.mainWindow())
-        self.action.setCheckable(True)
-        self.action.triggered.connect(self.activateTool)
-        self.iface.addToolBarIcon(self.action)
-        self.iface.addPluginToMenu(u"FichaUrban", self.action)
-        self.iface.mapCanvas().mapToolSet.connect(self.deactivateTool)
-
-
     def tancaGui(self):
 
         if self.dialog :
@@ -228,12 +237,17 @@ class FitxaUrban:
         return QCoreApplication.translate('FitxaUrban', message)
 
 
+    def log_info(self, msg):
+
+        QgsMessageLog.logMessage(msg, None, 0)
+
+
     def unload(self):
 
         global db
         if self.BD_OPEN == "SI" :
             db.close()
-            db=QSqlDatabase()
+            db = QSqlDatabase()
             db.removeDatabase("FitxaUrban")
             self.BD_OPEN = "NO"
             self.PREPAR = "NO"
@@ -458,9 +472,10 @@ class FitxaUrban:
 
             global db
             qu = QSqlQuery(db) 
-            sql = self.SQL_FITXA_ZONA.split("$ID_VALUE")[0] + str(self.id_selec) + self.SQL_FITXA_ZONA.split("$ID_VALUE")[1]
+            sql = f"{self.SQL_FITXA_ZONA.split('$ID_VALUE')[0]}{self.id_selec}{self.SQL_FITXA_ZONA.split('$ID_VALUE')[1]}"
             if qu.exec_(sql) == 0:
-                self.Missatge("C", self.tr("Error al llegir informació per fitxa zona\n\n"+qu.lastError().text()))
+                msg = f"Error al llegir informació per fitxa zona\n\n{qu.lastError().text()}"
+                self.Missatge("C", msg)
                 qu.clear()
                 return
 
@@ -483,41 +498,54 @@ class FitxaUrban:
                     for i in range(total):
                         QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), camps.split(",")[i], qu.value(i))
                         if self.sector_codi != "NULL":
-                            QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), self.Config("DESCR_SECTOR_ITEM"), u'{} - {}'.format(self.sector_codi, self.sector_desc))
+                            QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),
+                                self.Config("DESCR_SECTOR_ITEM"), f'{self.sector_codi} - {self.sector_desc}')
                         else:
-                            QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), self.Config("DESCR_SECTOR_ITEM"), None)
+                            QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),
+                                self.Config("DESCR_SECTOR_ITEM"), None)
 
-                    QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), self.Config("DESCR_CLASSI_ITEM"), u'{} - {}'.format(self.classi_codi, self.classi_desc))
+                    QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),
+                        self.Config("DESCR_CLASSI_ITEM"), f'{self.classi_codi} - {self.classi_desc}')
                     composition.refresh()
                     nl = ""
                     if self.Config("DIR_PDFS_MULTI") == "SI":
                         nl = self.tr(socket.gethostname() + "(" + time.strftime("%d")+")_")
-                    filename = os.path.join(self.dir_pdfs, '{}{}_zona_{}.pdf'.format(nl, self.refcat, str(qu.value(0))))
+
+                    filename = f'{nl}{self.refcat}_zona_{qu.value(0)}.pdf'
+                    filepath = os.path.join(self.dir_pdfs, filename)
                     exporter = QgsLayoutExporter(composition)
                     if exporter is None:
                         self.Missatge("W", "Exporter is None")
                         return
 
-                    result = exporter.exportToPdf(filename, QgsLayoutExporter.PdfExportSettings())
+                    result = exporter.exportToPdf(filepath, QgsLayoutExporter.PdfExportSettings())
                     if result == QgsLayoutExporter.Success:
-                        self.Missatge("I", self.tr("Fitxer generat correctament"))
+                        self.log_info(f"Fitxer generat correctament: {filename}")
                     else:
                         self.Missatge("W", "error")
                     if self.Config("PDF_ZONES_VISU") != "1":
-                        openFile(filename)
-                    lispdfs.append(filename)
+                        openFile(filepath)
+                    lispdfs.append(filepath)
 
             qu.clear()
+
+            create_merged_pdf(lispdfs)
+
+
+        def create_merged_pdf(lispdfs):
+            """ Create a PDF that includes all 'zones' """
+
             merger = PdfFileMerger()
             for file in lispdfs:
                 merger.append(PdfFileReader(file))
             nl = ""
             if self.Config("DIR_PDFS_MULTI") == "SI":
                 nl = self.tr(socket.gethostname() + "(" + time.strftime("%d") + ")_")
-            filename = os.path.join(self.dir_pdfs, '{}{}_zones.pdf'.format(nl, self.refcat))
-            merger.write(filename)
+            filename = f'{nl}{self.refcat}_zones.pdf'
+            filepath = os.path.join(self.dir_pdfs, filename)
+            merger.write(filepath)
             if self.Config("PDF_ZONES_VISU") != "2":
-                openFile(filename)
+                openFile(filepath)
 
             
         def destroyDialog():
