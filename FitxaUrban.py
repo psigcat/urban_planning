@@ -28,9 +28,9 @@ class FitxaUrban:
         self.settings = None
         self.action = None
         self.dialog = None
-        self.BD_OPEN = None
-        self.PREPAR = None
-        self.CONFIG = None
+        self.db_status = None
+        self.qgs_status = None
+        self.config_data = None
         self.dtop = 0
         self.dleft = 0
 
@@ -42,9 +42,9 @@ class FitxaUrban:
         self.settings = QSettings("PSIG", "FitxaUrban")
         self.action = None
         self.dialog = None
-        self.BD_OPEN = "NO"
-        self.PREPAR = "NO"
-        self.CONFIG = self.llegirConfig()
+        self.db_status = "NO"
+        self.qgs_status = "NO"
+        self.config_data = self.read_config_file()
         self.dtop = 0
         self.dleft = 0
 
@@ -62,17 +62,17 @@ class FitxaUrban:
     def Preparar(self):
         """ Preparacio d'inici o canvi de projecte qgs """
 
-        self.CONFIG = self.llegirConfig()
-        if self.PREPAR == "NO":
+        self.config_data = self.read_config_file()
+        if self.qgs_status == "NO":
             return
         
         # Carregar paràmetres de configuració
         if not QgsProject.instance().title():
-            self.Missatge("C", self.tr("No hi ha cap projecte carregat"))
+            self.Missatge("C", "No hi ha cap projecte carregat")
             return
         self.project_folder = QgsProject.instance().homePath()
-        if not self.project_folder :
-            self.Missatge("C", self.tr("No s'ha trobat carpeta projecte"))
+        if not self.project_folder:
+            self.Missatge("C", "No s'ha trobat carpeta projecte")
             return
         
         # Prepara directori informes
@@ -82,10 +82,10 @@ class FitxaUrban:
         d = QDir(self.dir_pdfs)
         if d.exists() == 0 :
             if d.mkdir(self.dir_pdfs) == 0 :
-                self.Missatge("C", self.tr("No s'ha pogut crear carpeta directori pdf's\n\n"+self.dir_pdfs))
+                self.Missatge("C", "No s'ha pogut crear carpeta directori pdf's\n\n"+self.dir_pdfs)
                 return
         if self.Config("DIR_PDFS_MULTI") == "SI":
-            nl = self.tr(socket.gethostname()+"("+time.strftime("%d")+")_")
+            nl = socket.gethostname()+"("+time.strftime("%d")+")_"
             lf = glob.glob(os.path.join(self.dir_pdfs, socket.gethostname()+"(*"))
             for uf in lf: 
                 if uf.find(nl) == -1 :
@@ -101,20 +101,29 @@ class FitxaUrban:
         if self.dir_sector == "":
             self.dir_sector = os.path.join(self.dir_html, 'sectors')
         self.dir_classi = self.Config("DIR_CLAS")
-        if self.dir_classi == "" :
+        if self.dir_classi == "":
             self.dir_classi = os.path.join(self.dir_html, 'classificacio')
         self.dir_orden = self.Config("DIR_ORD")
-        if self.dir_orden == "" :
+        if self.dir_orden == "":
             self.dir_orden = os.path.join(self.dir_html, 'ordenacions')
         
-        # Obrir PostgreSQL i preparar queries
+        # Get database queries from configuration files
+        self.prepare_queries()
+
+        # Connect to PostgreSQL database
+        self.connect_db()
+
+
+    def prepare_queries(self):
+        """ Get database queries from configuration files """
+
         self.SQL_FITXA = ""
         ff = self.Config("ARXIU_SQL")
         if ff.strip() == "":
             ff = str(os.path.join(self.project_folder, "config", "FitxaUrban_sql.txt"))
-        f = open(self.tr(ff), 'r')
+        f = open(ff, 'r')
         if f.closed :
-            self.Missatge("C", self.tr("Error al llegir \n\n"+ff))
+            self.Missatge("C", "Error al llegir \n\n"+ff)
             return
         for reg in f :
             self.SQL_FITXA += reg
@@ -124,16 +133,21 @@ class FitxaUrban:
         ff = self.Config("ARXIU_SQL_ZONA")
         if ff.strip() == "":
             ff = str(os.path.join(self.project_folder, "config", "FitxaUrban_sql_zona.txt"))
-        f = open(self.tr(ff), 'r')
+        f = open(ff, 'r')
         if f.closed :
-            self.Missatge("C", self.tr("Error al llegir \n\n"+ff))
+            self.Missatge("C", "Error al llegir \n\n"+ff)
             return
         for reg in f :
             self.SQL_FITXA_ZONA += reg
         f.close()
 
+
+    def connect_db(self):
+        """ Connect to PostgreSQL database """
+
         global db
-        if self.BD_OPEN == "SI" :
+
+        if self.db_status == "SI" :
             db.close()
             db=QSqlDatabase()
             db.removeDatabase("FitxaUrban")
@@ -145,18 +159,18 @@ class FitxaUrban:
             db.setPassword(self.Config("BD_PASS"))
             db.setPort(int(self.Config("BD_PORT")))
         else:
-            db.setConnectOptions("service="+self.Config("BD_SERVICE"))
+            db.setConnectOptions(f"service={self.Config('BD_SERVICE')}")
         db.open()
         if db.isOpen() == 0 :
-            self.Missatge("C", self.tr("No s'ha pogut obrir la Base de Dades\n\n'"+db.lastError().text()))
+            self.Missatge("C", "No s'ha pogut obrir la Base de Dades\n\n'"+db.lastError().text())
             return
 
-        self.BD_OPEN = "SI"
-        self.PREPAR = "SI"
+        self.db_status = "SI"
+        self.qgs_status = "SI"
 
 
-    def llegirConfig(self):
-        """ Llegir arxiu configuracio del directori del projecte """
+    def read_config_file(self):
+        """ Read and save text of configuration file located in project folder """
 
         if not QgsProject.instance().title():
             return ""
@@ -172,39 +186,40 @@ class FitxaUrban:
 
         f = open(config_path, "r", encoding="ISO-8859-1")
         if f.closed:
-            self.Missatge("C", self.tr("Error al llegir arxiu configuració\n\n"+ff))
+            self.Missatge("C", f"Error al llegir arxiu configuració\n\n{ff}")
             return ""
 
         conf = ""
-        for reg in f :
-            if len(reg) > 5 :
+        for reg in f:
+            if len(reg) > 5:
                 if reg[0] != "#" and reg.find(" = ") != -1:
                     conf += reg.strip()+"\n"
         f.close()
 
+        self.log_info(conf)
         return conf
 
 
     def Config(self, param):
 
-        if self.CONFIG.find(param+" = ") == -1:
+        if self.config_data.find(param + " = ") == -1:
             return ""
-        value = self.CONFIG.split(param+" = ")[1].split("\n")[0].strip()
+        value = self.config_data.split(param + " = ")[1].split("\n")[0].strip()
         return value
 
 
-    def tancaGui(self):
+    def close_dialog(self):
 
-        if self.dialog :
-            try :
+        if self.dialog:
+            try:
                 self.dtop = self.dialog.geometry().top()
                 self.dleft = self.dialog.geometry().left()
                 self.dialog.close()
-            except :
+            except:
                 self.dtop = 0
                 self.dleft = 0
         layer = self.iface.mapCanvas().currentLayer()
-        if layer is not None :
+        if layer is not None:
             rect = QgsRectangle(1, 1, 1, 1)
             layer.selectByRect(rect)
 
@@ -212,16 +227,19 @@ class FitxaUrban:
     def activateTool(self):
 
         k = ""
-        if self.CONFIG.find("LAYER_NAME"+" = ") != -1:
-            k = self.CONFIG.split("LAYER_NAME"+" = ")[1].split("\n")[0]
+        if self.config_data.find("LAYER_NAME" + " = ") != -1:
+            k = self.config_data.split("LAYER_NAME" + " = ")[1].split("\n")[0]
         if k == "":
             self.Missatge("I", "No hi ha cap configuració de projecte qgs carregada")
             return
+
+        self.log_info(f"Capa: {k}")
         registry = QgsProject.instance()
         layer = registry.mapLayersByName(k)[0]
         if layer is None:
-            self.Missatge("C", str("El layer "+k+" no està carregat"))
+            self.Missatge("C", f"Layer {k} no està carregada")
             return
+
         self.iface.mapCanvas().setMapTool(self.tool)
         self.action.setChecked(True)
 
@@ -229,12 +247,7 @@ class FitxaUrban:
     def deactivateTool(self):
 
         self.action.setChecked(False)
-        self.tancaGui()
-
-
-    def tr(self, message):
-        # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
-        return QCoreApplication.translate('FitxaUrban', message)
+        self.close_dialog()
 
 
     def log_info(self, msg):
@@ -245,16 +258,17 @@ class FitxaUrban:
     def unload(self):
 
         global db
-        if self.BD_OPEN == "SI" :
+
+        if self.db_status == "SI":
             db.close()
             db = QSqlDatabase()
             db.removeDatabase("FitxaUrban")
-            self.BD_OPEN = "NO"
-            self.PREPAR = "NO"
+            self.db_status = "NO"
+            self.qgs_status = "NO"
         self.action.setChecked(False)
         if self.dialog:
-            self.tancaGui()
-        self.iface.removePluginMenu(u'FitxaUrban', self.action)
+            self.close_dialog()
+        self.iface.removePluginMenu('FitxaUrban', self.action)
         self.iface.removeToolBarIcon(self.action)
 
 
@@ -262,10 +276,10 @@ class FitxaUrban:
         """ Finestra missatges """
 
         m = QMessageBox()
-        if av == "W" :
+        if av == "W":
             m.setIcon(QMessageBox.Warning)
             z = "Atenció"
-        elif av == "C" :
+        elif av == "C":
             m.setIcon(QMessageBox.Critical)
             z = "Error"
         else :
@@ -320,7 +334,7 @@ class FitxaUrban:
                 composition.refresh()
                 nl = ""
                 if self.Config("DIR_PDFS_MULTI") == "SI":
-                    nl = self.tr(socket.gethostname() + "(" + time.strftime("%d")+")_")
+                    nl = socket.gethostname() + "(" + time.strftime("%d")+")_"
 
                 filename = f'{nl}{self.refcat}_zona_{qu.value(0)}.pdf'
                 filepath = os.path.join(self.dir_pdfs, filename)
@@ -349,7 +363,7 @@ class FitxaUrban:
             merger.append(PdfFileReader(file))
         nl = ""
         if self.Config("DIR_PDFS_MULTI") == "SI":
-            nl = self.tr(socket.gethostname() + "(" + time.strftime("%d") + ")_")
+            nl = socket.gethostname() + "(" + time.strftime("%d") + ")_"
         filename = f'{nl}{self.refcat}_zones.pdf'
         filepath = os.path.join(self.dir_pdfs, filename)
         merger.write(filepath)
@@ -359,10 +373,10 @@ class FitxaUrban:
 
     def run(self):
 
-        if self.PREPAR == "NO":
-            self.PREPAR = "SI"
+        if self.qgs_status == "NO":
+            self.qgs_status = "SI"
             self.Preparar()
-            if self.BD_OPEN == "NO" :
+            if self.db_status == "NO" :
                 self.Missatge("C", "Errors en la preparació del plugin per al projecte")
                 return
 
@@ -416,7 +430,7 @@ class FitxaUrban:
         if self.dtop!= 0 and self.dleft != 0:
             self.dialog.setGeometry(self.dleft,self.dtop,self.dialog.width(),self.dialog.height())
         self.dialog.ui.label_5.setPixmap(QPixmap(self.Config("ARXIU_LOGO")))
-        self.dialog.ui.Sortir.clicked.connect(self.tancaGui)
+        self.dialog.ui.Sortir.clicked.connect(self.close_dialog)
 
         # Static links
         self.dialog.ui.lblCondGenerals.setText(u"<a href='file:///{:s}/condicions_generals.htm'>Condicions Generals</a>".format(self.dir_html))
@@ -531,7 +545,7 @@ class FitxaUrban:
                 # Make PDF
                 nl = ""
                 if self.Config("DIR_PDFS_MULTI") == "SI":
-                    nl = self.tr(socket.gethostname()+"("+time.strftime("%d")+")_")
+                    nl = socket.gethostname()+"("+time.strftime("%d")+")_"
                 filename = os.path.join(self.dir_pdfs, '{}{}_ubicacio.pdf'.format(nl,self.refcat))
                 exporter = QgsLayoutExporter(composition)
                 exporter.exportToPdf(filename,QgsLayoutExporter.PdfExportSettings())
@@ -545,7 +559,7 @@ class FitxaUrban:
             self.iface.mapCanvas().mapCanvasRefreshed.connect(refreshed)
             self.iface.mapCanvas().refresh()
 
-            
+
         def destroyDialog():
             self.dialog = None
 
@@ -628,8 +642,8 @@ class FitxaUrbanTool(QgsMapTool):
         self.canvas = canvas
         self.plugin = plugin
         k = ""
-        if str(self.plugin.CONFIG).find("ARXIU_PUNTER"+" = ") != -1:
-            k = str(self.plugin.CONFIG).split("ARXIU_PUNTER"+" = ")[1].split("\n")[0]
+        if str(self.plugin.config_data).find("ARXIU_PUNTER" + " = ") != -1:
+            k = str(self.plugin.config_data).split("ARXIU_PUNTER" + " = ")[1].split("\n")[0]
         if k.strip() == "":
             k=os.path.join(self.plugin.plugin_dir, "img", "FitxaUrban_punter.png")
         self.setCursor(QCursor(QPixmap(k), 1, 1))
@@ -639,8 +653,8 @@ class FitxaUrbanTool(QgsMapTool):
         """ Activate config layer """
 
         k = ""
-        if self.plugin.CONFIG.find("LAYER_NAME"+" = ") != -1:
-            k = self.plugin.CONFIG.split("LAYER_NAME"+" = ")[1].split("\n")[0]
+        if self.plugin.config_data.find("LAYER_NAME" + " = ") != -1:
+            k = self.plugin.config_data.split("LAYER_NAME" + " = ")[1].split("\n")[0]
         if k != "":
             registry = QgsProject.instance()
             layer = registry.mapLayersByName(k)[0]
