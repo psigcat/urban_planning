@@ -51,12 +51,12 @@ class FitxaUrban:
         filename = os.path.abspath(os.path.join(self.plugin_dir, "img", "FitxaUrban_logo.png"))
         self.icon = QIcon(str(filename))
         self.tool = FitxaUrbanTool(self.iface.mapCanvas(), self)
-        self.action = QAction(self.icon, u"FitxaUrban", self.iface.mainWindow())
+        self.action = QAction(self.icon, "FitxaUrban", self.iface.mainWindow())
         self.action.setCheckable(True)
-        self.action.triggered.connect(self.activateTool)
+        self.action.triggered.connect(self.activate_tool)
         self.iface.addToolBarIcon(self.action)
-        self.iface.addPluginToMenu(u"FichaUrban", self.action)
-        self.iface.mapCanvas().mapToolSet.connect(self.deactivateTool)
+        self.iface.addPluginToMenu("FichaUrban", self.action)
+        self.iface.mapCanvas().mapToolSet.connect(self.deactivate_tool)
 
 
     def Preparar(self):
@@ -68,11 +68,11 @@ class FitxaUrban:
         
         # Carregar paràmetres de configuració
         if not QgsProject.instance().title():
-            self.Missatge("C", "No hi ha cap projecte carregat")
+            self.show_message("C", "No hi ha cap projecte carregat")
             return
         self.project_folder = QgsProject.instance().homePath()
         if not self.project_folder:
-            self.Missatge("C", "No s'ha trobat carpeta projecte")
+            self.show_message("C", "No s'ha trobat carpeta projecte")
             return
         
         # Prepara directori informes
@@ -82,7 +82,7 @@ class FitxaUrban:
         d = QDir(self.dir_pdfs)
         if d.exists() == 0 :
             if d.mkdir(self.dir_pdfs) == 0 :
-                self.Missatge("C", "No s'ha pogut crear carpeta directori pdf's\n\n"+self.dir_pdfs)
+                self.show_message("C", "No s'ha pogut crear carpeta directori pdf's\n\n" + self.dir_pdfs)
                 return
         if self.get_parameter("DIR_PDFS_MULTI") == "SI":
             nl = socket.gethostname()+"("+time.strftime("%d")+")_"
@@ -123,7 +123,7 @@ class FitxaUrban:
             ff = str(os.path.join(self.project_folder, "config", "FitxaUrban_sql.txt"))
         f = open(ff, 'r')
         if f.closed :
-            self.Missatge("C", "Error al llegir \n\n"+ff)
+            self.show_message("C", "Error al llegir \n\n" + ff)
             return
         for reg in f :
             self.SQL_FITXA += reg
@@ -135,7 +135,7 @@ class FitxaUrban:
             ff = str(os.path.join(self.project_folder, "config", "FitxaUrban_sql_zona.txt"))
         f = open(ff, 'r')
         if f.closed :
-            self.Missatge("C", "Error al llegir \n\n"+ff)
+            self.show_message("C", "Error al llegir \n\n" + ff)
             return
         for reg in f :
             self.SQL_FITXA_ZONA += reg
@@ -162,7 +162,7 @@ class FitxaUrban:
             db.setConnectOptions(f"service={self.get_parameter('BD_SERVICE')}")
         db.open()
         if db.isOpen() == 0 :
-            self.Missatge("C", "No s'ha pogut obrir la Base de Dades\n\n'"+db.lastError().text())
+            self.show_message("C", "No s'ha pogut obrir la Base de Dades\n\n'" + db.lastError().text())
             return
 
         self.db_status = "SI"
@@ -181,12 +181,12 @@ class FitxaUrban:
 
         config_path = str(os.path.join(self.project_folder, "config", "FitxaUrban_config.txt"))
         if not os.path.exists(config_path):
-            self.Missatge("C", f"File not found: {config_path}")
+            self.show_message("C", f"File not found: {config_path}")
             return ""
 
         f = open(config_path, "r", encoding="UTF-8")
         if f.closed:
-            self.Missatge("C", f"Error al llegir arxiu configuració\n\n{ff}")
+            self.show_message("C", f"Error al llegir arxiu configuració\n\n{ff}")
             return ""
 
         conf = ""
@@ -226,27 +226,27 @@ class FitxaUrban:
             layer.selectByRect(rect)
 
 
-    def activateTool(self):
+    def activate_tool(self):
 
         k = ""
         if self.config_data.find("LAYER_NAME" + " = ") != -1:
             k = self.config_data.split("LAYER_NAME" + " = ")[1].split("\n")[0]
         if k == "":
-            self.Missatge("I", "No hi ha cap configuració de projecte qgs carregada")
+            self.show_message("I", "No hi ha cap configuració de projecte qgs carregada")
             return
 
         self.log_info(f"Capa: {k}")
         registry = QgsProject.instance()
         layer = registry.mapLayersByName(k)[0]
         if layer is None:
-            self.Missatge("C", f"Layer {k} no està carregada")
+            self.show_message("C", f"Layer {k} no està carregada")
             return
 
         self.iface.mapCanvas().setMapTool(self.tool)
         self.action.setChecked(True)
 
 
-    def deactivateTool(self):
+    def deactivate_tool(self):
 
         self.action.setChecked(False)
         self.close_dialog()
@@ -274,8 +274,8 @@ class FitxaUrban:
         self.iface.removeToolBarIcon(self.action)
 
 
-    def Missatge(self, av, t):
-        """ Finestra missatges """
+    def show_message(self, av, t):
+        """ Show message dialog """
 
         m = QMessageBox()
         if av == "W":
@@ -287,6 +287,7 @@ class FitxaUrban:
         else :
             m.setIcon(QMessageBox.Information)
             z = "Avís"
+
         m.setWindowTitle(z)
         m.setText(t)
         m.setStandardButtons(QMessageBox.Ok)
@@ -302,7 +303,7 @@ class FitxaUrban:
         sql = f"{self.SQL_FITXA_ZONA.split('$ID_VALUE')[0]}{self.id_selec}{self.SQL_FITXA_ZONA.split('$ID_VALUE')[1]}"
         if qu.exec_(sql) == 0:
             msg = f"Error al llegir informació per fitxa zona\n\n{qu.lastError().text()}"
-            self.Missatge("C", msg)
+            self.show_message("C", msg)
             qu.clear()
             return
 
@@ -318,7 +319,7 @@ class FitxaUrban:
                         composition = item
                         break
                 if composition is None :
-                    self.Missatge("C", "No s'ha trobat plantilla fitxa en el projecte")
+                    self.show_message("C", "No s'ha trobat plantilla fitxa en el projecte")
                     return
 
                 total = qu.record().count()
@@ -342,14 +343,14 @@ class FitxaUrban:
                 filepath = os.path.join(self.dir_pdfs, filename)
                 exporter = QgsLayoutExporter(composition)
                 if exporter is None:
-                    self.Missatge("W", "Exporter is None")
+                    self.show_message("W", "Exporter is None")
                     return
 
                 result = exporter.exportToPdf(filepath, QgsLayoutExporter.PdfExportSettings())
                 if result == QgsLayoutExporter.Success:
                     self.log_info(f"Fitxer generat correctament: {filename}")
                 else:
-                    self.Missatge("W", "error")
+                    self.show_message("W", "error")
                 if self.get_parameter("PDF_ZONES_VISU") != "1":
                     openFile(filepath)
                 lispdfs.append(filepath)
@@ -379,19 +380,19 @@ class FitxaUrban:
             self.qgs_status = "SI"
             self.Preparar()
             if self.db_status == "NO" :
-                self.Missatge("C", "Errors en la preparació del plugin per al projecte")
+                self.show_message("C", "Errors en la preparació del plugin per al projecte")
                 return
 
         # Get the active layer (where the selected form is).
         layer = self.iface.activeLayer()
         if layer is None :
-            self.Missatge("C", "No hi ha layer activat")
+            self.show_message("C", "No hi ha layer activat")
             return
 
         # single feature
         features = layer.selectedFeatures()
         if len(features) < 1:
-            self.Missatge("C", "No s'ha seleccionat res")
+            self.show_message("C", "No s'ha seleccionat res")
             return
 
         if len(features) > 1:
@@ -399,7 +400,7 @@ class FitxaUrban:
         feature = features[0]
         id_index = feature.fieldNameIndex(self.get_parameter("ID_NAME"))
         if id_index < 0:
-            self.Missatge("C", "Manca paràmetre ID_INDEX")
+            self.show_message("C", "Manca paràmetre ID_INDEX")
             return
 
         self.id_selec = feature[id_index]
@@ -408,13 +409,13 @@ class FitxaUrban:
         qu = QSqlQuery(db) 
         sq = self.SQL_FITXA.split("$ID_VALUE")[0]+str(self.id_selec)+self.SQL_FITXA.split("$ID_VALUE")[1]
         if qu.exec_(sq) == 0:
-            self.Missatge("C", "Error al llegir informació per fitxa\n\n"+qu.lastError().text())
+            self.show_message("C", "Error al llegir informació per fitxa\n\n" + qu.lastError().text())
             return
         if qu.next() == 0:
-            self.Missatge("C", "No s'ha trobat informació per fitxa\n\n"+qu.lastError().text())
+            self.show_message("C", "No s'ha trobat informació per fitxa\n\n" + qu.lastError().text())
             return
         if qu.value(0) is None:
-            self.Missatge("C", "No s'ha trobat informació per la fitxa")
+            self.show_message("C", "No s'ha trobat informació per la fitxa")
             return
 
         # Make dialog and set its atributes
@@ -529,7 +530,7 @@ class FitxaUrban:
                         composition = item
                         break
                 if composition is None:
-                    self.Missatge("C","No s'ha trobat plantilla fitxa en el projecte")
+                    self.show_message("C", "No s'ha trobat plantilla fitxa en el projecte")
                     return
                 # Set values
                 QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),self.get_parameter("REFCAT_ITEM"), self.refcat)
