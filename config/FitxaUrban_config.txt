@@ -59,6 +59,7 @@ DIR_PDFS_MULTI = NO
 # nom item printlayout
 PDF_UBICACIO = Fitxa 1 - Ubicació
 PDF_ZONES = Fitxa 2 - Zones
+PDF_SISTEMES = Fitxa 2 - Sistemes
 
 # Visualitzar 1=totes les zones en un mateix pdf, 2=cada zona en un pdf, 3=les dues opcions a la vegada
 PDF_ZONES_VISU = 1
