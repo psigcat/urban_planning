@@ -184,7 +184,7 @@ class FitxaUrban:
             self.Missatge("C", f"File not found: {config_path}")
             return ""
 
-        f = open(config_path, "r", encoding="ISO-8859-1")
+        f = open(config_path, "r", encoding="UTF-8")
         if f.closed:
             self.Missatge("C", f"Error al llegir arxiu configuració\n\n{ff}")
             return ""
@@ -196,7 +196,6 @@ class FitxaUrban:
                     conf += reg.strip()+"\n"
         f.close()
 
-        self.log_info(conf)
         return conf
 
 
