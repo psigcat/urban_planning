@@ -299,63 +299,71 @@ class FitxaUrban:
     def create_pdf_zones(self):
 
         global db
-        qu = QSqlQuery(db)
+
+        query = QSqlQuery(db)
         sql = f"{self.SQL_FITXA_ZONA.split('$ID_VALUE')[0]}{self.id_selec}{self.SQL_FITXA_ZONA.split('$ID_VALUE')[1]}"
-        if qu.exec_(sql) == 0:
-            msg = f"Error al llegir informació per fitxa zona\n\n{qu.lastError().text()}"
+        if query.exec_(sql) == 0:
+            msg = f"Error al llegir informació per fitxa zona\n\n{query.lastError().text()}"
             self.show_message("C", msg)
-            qu.clear()
+            query.clear()
             return
 
         camps = self.get_parameter("ZONES_ITEMS")
-        per_int = qu.record().indexOf(self.get_parameter("ZONA_AREA_%_NAME"))
+        per_int = query.record().indexOf(self.get_parameter("ZONA_AREA_%_NAME"))
         per_min = int(self.get_parameter("ZONA_AREA_%_MINIM"))
         lispdfs = []
-        while qu.next():
-            if qu.value(per_int) >= per_min:
-                composition = None
-                for item in QgsProject.instance().layoutManager().printLayouts():
-                    if item.name() == self.get_parameter("PDF_ZONES") :
-                        composition = item
-                        break
-                if composition is None :
-                    self.show_message("C", "No s'ha trobat plantilla fitxa en el projecte")
-                    return
 
-                total = qu.record().count()
-                for i in range(total):
-                    QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), camps.split(",")[i], qu.value(i))
-                    if self.sector_codi != "NULL":
-                        QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),
-                            self.get_parameter("DESCR_SECTOR_ITEM"), f'{self.sector_codi} - {self.sector_desc}')
-                    else:
-                        QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),
-                            self.get_parameter("DESCR_SECTOR_ITEM"), None)
+        # Get layouts 'PDF_ZONES' and 'PDF_SISTEMES'
+        layout_zones = get_print_layout(self.get_parameter('PDF_ZONES'))
+        if layout_zones is None:
+            self.show_message("C", f"No s'ha trobat la plantilla: {self.get_parameter('PDF_ZONES')}")
+            return
 
-                QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),
-                    self.get_parameter("DESCR_CLASSI_ITEM"), f'{self.classi_codi} - {self.classi_desc}')
-                composition.refresh()
-                nl = ""
-                if self.get_parameter("DIR_PDFS_MULTI") == "SI":
-                    nl = socket.gethostname() + "(" + time.strftime("%d")+")_"
+        layout_sistemes = get_print_layout(self.get_parameter('PDF_SISTEMES'))
+        if layout_sistemes is None:
+            self.show_message("C", f"No s'ha trobat la plantilla: {self.get_parameter('PDF_SISTEMES')}")
 
-                filename = f'{nl}{self.refcat}_zona_{qu.value(0)}.pdf'
-                filepath = os.path.join(self.dir_pdfs, filename)
-                exporter = QgsLayoutExporter(composition)
-                if exporter is None:
-                    self.show_message("W", "Exporter is None")
-                    return
+        # Process all records
+        while query.next():
+            if query.value(per_int) < per_min:
+                continue
 
-                result = exporter.exportToPdf(filepath, QgsLayoutExporter.PdfExportSettings())
-                if result == QgsLayoutExporter.Success:
-                    self.log_info(f"Fitxer generat correctament: {filename}")
+            total = query.record().count()
+            for i in range(total):
+                QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), camps.split(",")[i], query.value(i))
+                if self.sector_codi != "NULL":
+                    QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),
+                        self.get_parameter("DESCR_SECTOR_ITEM"), f'{self.sector_codi} - {self.sector_desc}')
                 else:
-                    self.show_message("W", "error")
-                if self.get_parameter("PDF_ZONES_VISU") != "1":
-                    openFile(filepath)
-                lispdfs.append(filepath)
+                    QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),
+                        self.get_parameter("DESCR_SECTOR_ITEM"), None)
 
-        qu.clear()
+            QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),
+                self.get_parameter("DESCR_CLASSI_ITEM"), f'{self.classi_codi} - {self.classi_desc}')
+            layout_zones.refresh()
+            nl = ""
+            if self.get_parameter("DIR_PDFS_MULTI") == "SI":
+                nl = socket.gethostname() + "(" + time.strftime("%d")+")_"
+
+            filename = f'{nl}{self.refcat}_zona_{query.value(0)}.pdf'
+            filepath = os.path.join(self.dir_pdfs, filename)
+            exporter = QgsLayoutExporter(layout_zones)
+            if exporter is None:
+                self.show_message("W", "Exporter is None")
+                return
+
+            result = exporter.exportToPdf(filepath, QgsLayoutExporter.PdfExportSettings())
+            if result == QgsLayoutExporter.Success:
+                self.log_info(f"Fitxer generat correctament: {filename}")
+            else:
+                self.show_message("W", "error")
+            if self.get_parameter("PDF_ZONES_VISU") != "1":
+                openFile(filepath)
+            lispdfs.append(filepath)
+
+        query.clear()
+
+        self.create_merged_pdf(lispdfs)
 
 
     def create_merged_pdf(self, lispdfs):
@@ -750,5 +758,19 @@ def layout_item(layout, item_id, item_class):
     else:
         # force sip to correctly cast item to required type
         return sip.cast(item, item_class)
+
+
+def get_print_layout(layout_name):
+    """ Get layout with name @layout_name """
+
+    print_layouts = QgsProject.instance().layoutManager().printLayouts()
+    layout = None
+    for item in print_layouts:
+        if item.name() == layout_name:
+            layout = item
+            break
+
+    return layout
+
 
 # endregion
