@@ -60,8 +60,8 @@ class FitxaUrban:
         self.iface.mapCanvas().mapToolSet.connect(self.deactivate_tool)
 
 
-    def Preparar(self):
-        """ Preparacio d'inici o canvi de projecte qgs """
+    def init_config(self):
+        """ Function called when a QGIS project is loaded """
 
         self.config_data = self.read_config_file()
         if self.qgs_status == "NO":
@@ -76,7 +76,7 @@ class FitxaUrban:
             self.show_message("C", "No s'ha trobat carpeta projecte")
             return
         
-        # Prepara directori informes
+        # Get PDF report folders
         self.dir_pdfs = self.get_parameter("DIR_PDFS")
         if self.dir_pdfs == "":
             self.dir_pdfs = os.path.join(self.project_folder, 'pdfs')
@@ -95,6 +95,7 @@ class FitxaUrban:
                     except OSError:
                         pass
 
+        # Get HTML folders
         self.dir_html = self.get_parameter("DIR_HTML")
         if self.dir_html == "":
             self.dir_html = os.path.join(self.project_folder, 'html')
@@ -107,6 +108,9 @@ class FitxaUrban:
         self.dir_orden = self.get_parameter("DIR_ORD")
         if self.dir_orden == "":
             self.dir_orden = os.path.join(self.dir_html, 'ordenacions')
+        self.dir_annex = self.get_parameter("DIR_ANNEX")
+        if self.dir_annex == "":
+            self.dir_annex = os.path.join(self.dir_html, 'annexos_claus')
         
         # Get database queries from configuration files
         self.prepare_queries()
@@ -393,15 +397,32 @@ class FitxaUrban:
 
 
     def open_pdf_annex(self):
+        """ Open PDF file associated with code: '1a1', '3b1' """
 
-        self.log_info("open_pdf_annex")
+        code = None
+        if '1a1' in self.codes:
+            code = '1a1'
+        elif '3b1' in self.codes:
+            code = '3b1'
+
+        if code is None:
+            self.log_info(f"Code not found: {code}")
+            return
+
+        filepath = os.path.join(self.dir_annex, f'annex_{code}.pdf')
+        if not os.path.exists(filepath):
+            self.log_info(f"File not found: {filepath}")
+            return
+
+        self.log_info(f"File opened: {filepath}")
+        open_file(filepath)
 
 
     def run(self):
 
         if self.qgs_status == "NO":
             self.qgs_status = "SI"
-            self.Preparar()
+            self.init_config()
             if self.db_status == "NO" :
                 self.show_message("C", "Errors en la preparació del plugin per al projecte")
                 return

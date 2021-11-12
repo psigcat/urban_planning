@@ -38,8 +38,8 @@ def classFactory(iface):  # pylint: disable=invalid-name
     plugin = FitxaUrban(iface)
 
     # Add plugin project change triggers
-    iface.projectRead.connect(plugin.Preparar)
-    iface.newProjectCreated.connect(plugin.Preparar)
+    iface.projectRead.connect(plugin.init_config)
+    iface.newProjectCreated.connect(plugin.init_config)
 
     # return the plugin
     return plugin
