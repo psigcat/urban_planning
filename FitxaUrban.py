@@ -10,10 +10,11 @@ from qgis.core import QgsExpressionContextUtils, QgsFeature, QgsGeometry, QgsMes
 from qgis.gui import QgsMapTool
 
 import os, sys, subprocess, socket, time, glob, sip
+from functools import partial
 
 from .PyPDF2 import PdfFileMerger, PdfFileReader
-from .ui.FitxaUrban_dialog import Ui_FitxaUrbanDialog
-from .ui.FitxaUrban_vista import Ui_FitxaUrbanVista
+from .ui_manager import FitxaUrbanDialog
+from .ui_manager import FitxaUrbanVista
 
 global db
 
@@ -391,6 +392,11 @@ class FitxaUrban:
             open_file(filepath)
 
 
+    def open_pdf_annex(self):
+
+        self.log_info("open_pdf_annex")
+
+
     def run(self):
 
         if self.qgs_status == "NO":
@@ -400,21 +406,24 @@ class FitxaUrban:
                 self.show_message("C", "Errors en la preparació del plugin per al projecte")
                 return
 
-        # Get the active layer (where the selected form is).
+        # Get the active layer (where the selected form is)
         layer = self.iface.activeLayer()
         if layer is None :
             self.show_message("C", "No hi ha layer activat")
             return
 
-        # single feature
+        # Check selected features
         features = layer.selectedFeatures()
         if len(features) < 1:
             self.show_message("C", "No s'ha seleccionat res")
             return
 
+        # If multiple features selected, get only the first one
         if len(features) > 1:
             layer.selectByIds([features[0].id()])
         feature = features[0]
+
+        # Check parameter 'ID_NAME'
         id_index = feature.fieldNameIndex(self.get_parameter("ID_NAME"))
         if id_index < 0:
             self.show_message("C", "Manca paràmetre ID_INDEX")
@@ -445,24 +454,26 @@ class FitxaUrban:
                 self.dtop = 0
                 self.dleft = 0
 
-        self.dialog = self.initDialog(Ui_FitxaUrbanDialog)
+        self.dialog = FitxaUrbanDialog()
+
         self.dialog.setFixedSize(self.dialog.size())
         if self.dtop!= 0 and self.dleft != 0:
-            self.dialog.setGeometry(self.dleft,self.dtop,self.dialog.width(),self.dialog.height())
-        self.dialog.ui.label_5.setPixmap(QPixmap(self.get_parameter("ARXIU_LOGO")))
-        self.dialog.ui.Sortir.clicked.connect(self.close_dialog)
+            self.dialog.setGeometry(self.dleft, self.dtop, self.dialog.width(), self.dialog.height())
+        self.dialog.label_5.setPixmap(QPixmap(self.get_parameter("ARXIU_LOGO")))
+        self.dialog.Sortir.clicked.connect(self.close_dialog)
+        self.dialog.btn_pdf_annex.setEnabled(False)
 
         # Static links
-        self.dialog.ui.lblCondGenerals.setText(u"<a href='file:///{:s}/condicions_generals.htm'>Condicions Generals</a>".format(self.dir_html))
-        self.dialog.ui.lblCondGenerals.linkActivated.connect(self.webDialog)
-        self.dialog.ui.lblDotacioAparc.setText(u"<a href='file:///{:s}/dotacio_aparcament.htm'>Dotació mínima d'aparcaments</a>".format(self.dir_html))
-        self.dialog.ui.lblDotacioAparc.linkActivated.connect(self.webDialog)
-        self.dialog.ui.lblRegulacioAparc.setText(u"<a href='file:///{:s}/regulacio_aparcament.htm'>Regulació particular de l'ús d'aparcaments</a>".format(self.dir_html))
-        self.dialog.ui.lblRegulacioAparc.linkActivated.connect(self.webDialog)
-        self.dialog.ui.lblParamFinca.setText(u"<a href='file:///{:s}/param_finca.htm'>Paràmetres Finca</a>".format(self.dir_html))
-        self.dialog.ui.lblParamFinca.linkActivated.connect(self.webDialog)
-        self.dialog.ui.lblParamEdificacio.setText(u"<a href='file:///{:s}/param_edificacio.htm'>Paràmetres Edificació</a>".format(self.dir_html))
-        self.dialog.ui.lblParamEdificacio.linkActivated.connect(self.webDialog)
+        self.dialog.lblCondGenerals.setText(u"<a href='file:///{:s}/condicions_generals.htm'>Condicions Generals</a>".format(self.dir_html))
+        self.dialog.lblCondGenerals.linkActivated.connect(self.web_dialog)
+        self.dialog.lblDotacioAparc.setText(u"<a href='file:///{:s}/dotacio_aparcament.htm'>Dotació mínima d'aparcaments</a>".format(self.dir_html))
+        self.dialog.lblDotacioAparc.linkActivated.connect(self.web_dialog)
+        self.dialog.lblRegulacioAparc.setText(u"<a href='file:///{:s}/regulacio_aparcament.htm'>Regulació particular de l'ús d'aparcaments</a>".format(self.dir_html))
+        self.dialog.lblRegulacioAparc.linkActivated.connect(self.web_dialog)
+        self.dialog.lblParamFinca.setText(u"<a href='file:///{:s}/param_finca.htm'>Paràmetres Finca</a>".format(self.dir_html))
+        self.dialog.lblParamFinca.linkActivated.connect(self.web_dialog)
+        self.dialog.lblParamEdificacio.setText(u"<a href='file:///{:s}/param_edificacio.htm'>Paràmetres Edificació</a>".format(self.dir_html))
+        self.dialog.lblParamEdificacio.linkActivated.connect(self.web_dialog)
 
         # Show data
         self.refcat=str(qu.value(int(self.get_parameter("REFCAT"))))
@@ -472,24 +483,24 @@ class FitxaUrban:
         self.sector_desc=str(qu.value(int(self.get_parameter("DESCR_SECTOR"))))
         self.classi_codi=str(qu.value(int(self.get_parameter("CODI_CLASSI"))))
         self.classi_desc=str(qu.value(int(self.get_parameter("DESCR_CLASSI"))))
-        self.dialog.ui.refcat.setText(u'{}'.format(self.refcat))
-        self.dialog.ui.area.setText((u'{}'.format(round(self.area,1))).rstrip('0').rstrip('.'))
-        self.dialog.ui.txtAdreca.setText(u'{}'.format(self.adreca))
+        self.dialog.refcat.setText(u'{}'.format(self.refcat))
+        self.dialog.area.setText((u'{}'.format(round(self.area,1))).rstrip('0').rstrip('.'))
+        self.dialog.txtAdreca.setText(u'{}'.format(self.adreca))
         if self.sector_codi != "NULL": # It may not be part of any sector
-            self.dialog.ui.txtSector.setText(u'{} - {}'.format(self.sector_codi, self.sector_desc))
-            self.dialog.ui.lblSector.setText(u"<a href='file:///{:s}'>Veure normativa</a>".format(os.path.join(self.dir_sector,'{:s}.htm'.format('{}'.format(self.sector_codi)))))
-            self.dialog.ui.lblSector.linkActivated.connect(self.webDialog)
+            self.dialog.txtSector.setText(u'{} - {}'.format(self.sector_codi, self.sector_desc))
+            self.dialog.lblSector.setText(u"<a href='file:///{:s}'>Veure normativa</a>".format(os.path.join(self.dir_sector,'{:s}.htm'.format('{}'.format(self.sector_codi)))))
+            self.dialog.lblSector.linkActivated.connect(self.web_dialog)
         else:
-            self.dialog.ui.lblSector.setHidden(True)
-        self.dialog.ui.txtClass.setText(u'{} - {}'.format(self.classi_codi, self.classi_desc))
-        self.dialog.ui.lblClass.setText(u"<a href='file:///{:s}'>Veure normativa</a>".format(os.path.join(self.dir_classi,'{:s}.htm'.format('{}'.format(self.classi_codi)))))
+            self.dialog.lblSector.setHidden(True)
+        self.dialog.txtClass.setText(u'{} - {}'.format(self.classi_codi, self.classi_desc))
+        self.dialog.lblClass.setText(u"<a href='file:///{:s}'>Veure normativa</a>".format(os.path.join(self.dir_classi,'{:s}.htm'.format('{}'.format(self.classi_codi)))))
         self.codes = str(qu.value(int(self.get_parameter("CODI_ZONES")))).replace("{", "").replace("}", "")
         self.percents = str(qu.value(int(self.get_parameter("PERCENT_ZONES")))).replace("{", "").replace("}", "")
         self.general_codes = str(qu.value(int(self.get_parameter("CODI_GENERAL_ZONES")))).replace("{", "").replace("}", "")
         for i in range(0, 4):
-            txtClau = getattr(self.dialog.ui, 'txtClau_{}'.format(i + 1))
-            txtPer = getattr(self.dialog.ui, 'txtPer_{}'.format(i + 1))
-            lblOrd = getattr(self.dialog.ui, 'lblOrd_{}'.format(i + 1))
+            txtClau = getattr(self.dialog, 'txtClau_{}'.format(i + 1))
+            txtPer = getattr(self.dialog, 'txtPer_{}'.format(i + 1))
+            lblOrd = getattr(self.dialog, 'lblOrd_{}'.format(i + 1))
             try:
                 txtClau.setText(u'{}'.format(self.codes.split(",")[i]))
             except IndexError:
@@ -506,7 +517,7 @@ class FitxaUrban:
                 else:
                     zz = self.general_codes.split(",")[i]
                 lblOrd.setText(u'{}'.format(zz))
-                lblOrd.linkActivated.connect(self.webDialog)
+                lblOrd.linkActivated.connect(self.web_dialog)
             except IndexError:
                 lblOrd.setHidden(True)
 
@@ -515,7 +526,7 @@ class FitxaUrban:
         self.dialog.show()
 
 
-        def makeShowUbicacioPdf():
+        def make_show_ubicacio_pdf():
             """ PDF generation functions """
 
             # Make temporary layer
@@ -584,58 +595,42 @@ class FitxaUrban:
             self.iface.mapCanvas().mapCanvasRefreshed.connect(refreshed)
             self.iface.mapCanvas().refresh()
 
-
-        def destroyDialog():
-            self.dialog = None
-
         # Connect the click signal to the functions
-        self.dialog.ui.lblClass.linkActivated.connect(self.webDialog)
-        self.dialog.ui.btnParcelaPdf.clicked.connect(makeShowUbicacioPdf)
-        self.dialog.ui.btnClauPdf_1.clicked.connect(self.create_pdf_zones)
-        self.dialog.destroyed.connect(destroyDialog)
+        self.dialog.lblClass.linkActivated.connect(self.web_dialog)
+        self.dialog.btnParcelaPdf.clicked.connect(make_show_ubicacio_pdf)
+        self.dialog.btnClauPdf_1.clicked.connect(self.create_pdf_zones)
+        self.dialog.btn_pdf_annex.clicked.connect(self.open_pdf_annex)
 
         self.dialog.exec_()
 
 
-    def webDialog(self, url):
+    def web_dialog(self, url):
 
         QgsMessageLog.logMessage("Opened url: " + url)
-        dialog = self.initDialog(Ui_FitxaUrbanVista, Qt.WindowSystemMenuHint | Qt.WindowTitleHint | Qt.WindowMaximizeButtonHint)
-        dialog.ui.webView.setUrl(QUrl(url))
-        dialog.ui.webView.setWhatsThis(url)
-        
-        def exportPDF():
-            printer = QPrinter(QPrinter.HighResolution)
-            printer.setOutputFormat(QPrinter.PdfFormat)
-            printer.setPaperSize(QPrinter.A4)
-            #printer.setFullPage(True)
-            printer.setOrientation(QPrinter.Portrait)
-            printer.setPageMargins(15, 15, 15, 15, QPrinter.Millimeter)
-            filename = str(os.path.splitext(os.path.basename(dialog.ui.webView.whatsThis()))[0])+u".pdf"
-            filename = os.path.join(self.dir_pdfs,filename)
-            printer.setOutputFileName(filename)
-            dialog.ui.webView.print_(printer)
-            open_file(filename)
-
-        dialog.ui.Sortir.clicked.connect(dialog.close)
-        dialog.ui.Exportar.clicked.connect(exportPDF)
+        dialog = FitxaUrbanVista()
+        dialog.setWindowFlags(Qt.WindowSystemMenuHint | Qt.WindowTitleHint | Qt.WindowMaximizeButtonHint)
+        dialog.webView.setUrl(QUrl(url))
+        dialog.webView.setWhatsThis(url)
+        dialog.Sortir.clicked.connect(dialog.close)
+        dialog.Exportar.clicked.connect(partial(self.export_pdf, dialog))
         dialog.exec_()
 
 
-    def initDialog(self, Class, flags=Qt.WindowSystemMenuHint | Qt.WindowTitleHint):
-        """ Initializes a Dialog with the usual parameters of this plugin """
+    def export_pdf(self, dialog):
 
-        # This function makes the code more pretty
-        dialog = QDialog(None, flags)
-        dialog.ui = Class()
-        dialog.ui.setupUi(dialog)
-        dialog.setAttribute(Qt.WA_DeleteOnClose)
-        dialog.setWindowIcon(self.icon)
-        dialog.setWindowModality(Qt.WindowModal)
-        return dialog
+        printer = QPrinter(QPrinter.HighResolution)
+        printer.setOutputFormat(QPrinter.PdfFormat)
+        printer.setPaperSize(QPrinter.A4)
+        printer.setOrientation(QPrinter.Portrait)
+        printer.setPageMargins(15, 15, 15, 15, QPrinter.Millimeter)
+        filename = str(os.path.splitext(os.path.basename(dialog.webView.whatsThis()))[0])+u".pdf"
+        filename = os.path.join(self.dir_pdfs,filename)
+        printer.setOutputFileName(filename)
+        dialog.webView.print_(printer)
+        open_file(filename)
 
 
-    def getPDFPrinter(self, name):
+    def get_pdf_printer(self, name):
 
         printer = QPrinter(QPrinter.HighResolution)
         path = QFileDialog.getSaveFileName(
@@ -654,9 +649,6 @@ class FitxaUrban:
         else:
             return None
 
-
-    def error(self, msg):
-        self.iface.messageBar().pushCritical("Error", msg)
 
 
 class FitxaUrbanTool(QgsMapTool):
