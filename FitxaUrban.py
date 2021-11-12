@@ -460,7 +460,7 @@ class FitxaUrban:
         if self.dtop!= 0 and self.dleft != 0:
             self.dialog.setGeometry(self.dleft, self.dtop, self.dialog.width(), self.dialog.height())
         self.dialog.label_5.setPixmap(QPixmap(self.get_parameter("ARXIU_LOGO")))
-        self.dialog.Sortir.clicked.connect(self.close_dialog)
+        self.dialog.rejected.connect(self.close_dialog)
         self.dialog.btn_pdf_annex.setEnabled(False)
 
         # Static links
