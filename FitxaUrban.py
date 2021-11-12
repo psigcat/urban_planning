@@ -432,7 +432,7 @@ class FitxaUrban:
         self.id_selec = feature[id_index]
 
         global db
-        qu = QSqlQuery(db) 
+        qu = QSqlQuery(db)
         sq = self.SQL_FITXA.split("$ID_VALUE")[0]+str(self.id_selec)+self.SQL_FITXA.split("$ID_VALUE")[1]
         if qu.exec_(sq) == 0:
             self.show_message("C", "Error al llegir informació per fitxa\n\n" + qu.lastError().text())
@@ -464,45 +464,59 @@ class FitxaUrban:
         self.dialog.btn_pdf_annex.setEnabled(False)
 
         # Static links
-        self.dialog.lblCondGenerals.setText(u"<a href='file:///{:s}/condicions_generals.htm'>Condicions Generals</a>".format(self.dir_html))
+        link = u"<a href='file:///{:s}/condicions_generals.htm'>Condicions Generals</a>".format(self.dir_html)
+        self.dialog.lblCondGenerals.setText(link)
         self.dialog.lblCondGenerals.linkActivated.connect(self.web_dialog)
-        self.dialog.lblDotacioAparc.setText(u"<a href='file:///{:s}/dotacio_aparcament.htm'>Dotació mínima d'aparcaments</a>".format(self.dir_html))
+        link = u"<a href='file:///{:s}/dotacio_aparcament.htm'>Dotació mínima d'aparcaments</a>".format(self.dir_html)
+        self.dialog.lblDotacioAparc.setText(link)
         self.dialog.lblDotacioAparc.linkActivated.connect(self.web_dialog)
-        self.dialog.lblRegulacioAparc.setText(u"<a href='file:///{:s}/regulacio_aparcament.htm'>Regulació particular de l'ús d'aparcaments</a>".format(self.dir_html))
+        link = u"<a href='file:///{:s}/regulacio_aparcament.htm'>Regulació particular de l'ús d'aparcaments</a>".format(self.dir_html)
+        self.dialog.lblRegulacioAparc.setText(link)
         self.dialog.lblRegulacioAparc.linkActivated.connect(self.web_dialog)
-        self.dialog.lblParamFinca.setText(u"<a href='file:///{:s}/param_finca.htm'>Paràmetres Finca</a>".format(self.dir_html))
+        link = u"<a href='file:///{:s}/param_finca.htm'>Paràmetres Finca</a>".format(self.dir_html)
+        self.dialog.lblParamFinca.setText(link)
         self.dialog.lblParamFinca.linkActivated.connect(self.web_dialog)
-        self.dialog.lblParamEdificacio.setText(u"<a href='file:///{:s}/param_edificacio.htm'>Paràmetres Edificació</a>".format(self.dir_html))
+        link = u"<a href='file:///{:s}/param_edificacio.htm'>Paràmetres Edificació</a>".format(self.dir_html)
+        self.dialog.lblParamEdificacio.setText(link)
         self.dialog.lblParamEdificacio.linkActivated.connect(self.web_dialog)
 
         # Show data
-        self.refcat=str(qu.value(int(self.get_parameter("REFCAT"))))
-        self.area=float(qu.value(int(self.get_parameter("AREA"))))
-        self.adreca=str(qu.value(int(self.get_parameter("ADRECA"))))
+        self.refcat = str(qu.value(int(self.get_parameter("REFCAT"))))
+        self.area = float(qu.value(int(self.get_parameter("AREA"))))
+        self.adreca = str(qu.value(int(self.get_parameter("ADRECA"))))
         self.sector_codi = str(qu.value(int(self.get_parameter("CODI_SECTOR"))))
-        self.sector_desc=str(qu.value(int(self.get_parameter("DESCR_SECTOR"))))
-        self.classi_codi=str(qu.value(int(self.get_parameter("CODI_CLASSI"))))
-        self.classi_desc=str(qu.value(int(self.get_parameter("DESCR_CLASSI"))))
-        self.dialog.refcat.setText(u'{}'.format(self.refcat))
-        self.dialog.area.setText((u'{}'.format(round(self.area,1))).rstrip('0').rstrip('.'))
-        self.dialog.txtAdreca.setText(u'{}'.format(self.adreca))
+        self.sector_desc = str(qu.value(int(self.get_parameter("DESCR_SECTOR"))))
+        self.classi_codi = str(qu.value(int(self.get_parameter("CODI_CLASSI"))))
+        self.classi_desc = str(qu.value(int(self.get_parameter("DESCR_CLASSI"))))
+        self.dialog.refcat.setText(self.refcat)
+        area = (u'{}'.format(round(self.area,1))).rstrip('0').rstrip('.')
+        self.dialog.area.setText(area)
+        self.dialog.txtAdreca.setText(self.adreca)
         if self.sector_codi != "NULL": # It may not be part of any sector
-            self.dialog.txtSector.setText(u'{} - {}'.format(self.sector_codi, self.sector_desc))
+            self.dialog.txtSector.setText(f'{self.sector_codi} - {self.sector_desc}')
             self.dialog.lblSector.setText(u"<a href='file:///{:s}'>Veure normativa</a>".format(os.path.join(self.dir_sector,'{:s}.htm'.format('{}'.format(self.sector_codi)))))
             self.dialog.lblSector.linkActivated.connect(self.web_dialog)
         else:
             self.dialog.lblSector.setHidden(True)
-        self.dialog.txtClass.setText(u'{} - {}'.format(self.classi_codi, self.classi_desc))
+
+        self.dialog.txtClass.setText(f'{self.classi_codi} - {self.classi_desc}')
         self.dialog.lblClass.setText(u"<a href='file:///{:s}'>Veure normativa</a>".format(os.path.join(self.dir_classi,'{:s}.htm'.format('{}'.format(self.classi_codi)))))
         self.codes = str(qu.value(int(self.get_parameter("CODI_ZONES")))).replace("{", "").replace("}", "")
         self.percents = str(qu.value(int(self.get_parameter("PERCENT_ZONES")))).replace("{", "").replace("}", "")
         self.general_codes = str(qu.value(int(self.get_parameter("CODI_GENERAL_ZONES")))).replace("{", "").replace("}", "")
+
+        # Enable button 'Obrir Annex' only for codes: '1a1', '3b1'
+        self.dialog.btn_pdf_annex.setEnabled(False)
+        self.log_info(self.codes)
+        if '1a1' in self.codes or '3b1' in self.codes:
+            self.dialog.btn_pdf_annex.setEnabled(True)
+
         for i in range(0, 4):
-            txtClau = getattr(self.dialog, 'txtClau_{}'.format(i + 1))
-            txtPer = getattr(self.dialog, 'txtPer_{}'.format(i + 1))
-            lblOrd = getattr(self.dialog, 'lblOrd_{}'.format(i + 1))
+            txtClau = getattr(self.dialog, f'txtClau_{i + 1}')
+            txtPer = getattr(self.dialog, f'txtPer_{i + 1}')
+            lblOrd = getattr(self.dialog, f'lblOrd_{i + 1}')
             try:
-                txtClau.setText(u'{}'.format(self.codes.split(",")[i]))
+                txtClau.setText(f'{self.codes.split(",")[i]}')
             except IndexError:
                 txtClau.setHidden(True)
             try:
@@ -516,7 +530,7 @@ class FitxaUrban:
                     zz = u"<a href='file:///{:s}'>{:s}</a>".format(filepath, filename)
                 else:
                     zz = self.general_codes.split(",")[i]
-                lblOrd.setText(u'{}'.format(zz))
+                lblOrd.setText(f'{zz}')
                 lblOrd.linkActivated.connect(self.web_dialog)
             except IndexError:
                 lblOrd.setHidden(True)
