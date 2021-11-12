@@ -504,6 +504,7 @@ class FitxaUrban:
         self.codes = str(qu.value(int(self.get_parameter("CODI_ZONES")))).replace("{", "").replace("}", "")
         self.percents = str(qu.value(int(self.get_parameter("PERCENT_ZONES")))).replace("{", "").replace("}", "")
         self.general_codes = str(qu.value(int(self.get_parameter("CODI_GENERAL_ZONES")))).replace("{", "").replace("}", "")
+        qu.clear()
 
         # Enable button 'Obrir Annex' only for codes: '1a1', '3b1'
         self.dialog.btn_pdf_annex.setEnabled(False)
@@ -535,87 +536,83 @@ class FitxaUrban:
             except IndexError:
                 lblOrd.setHidden(True)
 
-        qu.clear()
+        # Connect the click signal to the functions
+        self.dialog.lblClass.linkActivated.connect(self.web_dialog)
+        self.dialog.btnParcelaPdf.clicked.connect(partial(self.make_show_ubicacio_pdf, feature))
+        self.dialog.btnClauPdf_1.clicked.connect(self.create_pdf_zones)
+        self.dialog.btn_pdf_annex.clicked.connect(self.open_pdf_annex)
 
         self.dialog.show()
 
 
-        def make_show_ubicacio_pdf():
-            """ PDF generation functions """
+    def make_show_ubicacio_pdf(self, feature):
+        """ PDF generation functions """
 
-            # Make temporary layer
-            try:
-                self.iface.removeMapLayers(self.get_parameter("SELEC_NAME"))
-            except:
-                a = 1
+        # Make temporary layer
+        try:
+            self.iface.removeMapLayers(self.get_parameter("SELEC_NAME"))
+        except:
+            a = 1
 
-            vl = self.iface.addVectorLayer("Polygon?crs=epsg:25831&field=id:integer&index=yes", "temp_print_polygon", "memory")
-            k = self.get_parameter("ARXIU_QML")
-            if k.strip() == "":
-                k=os.path.join(self.plugin_dir,"FitxaUrban.qml")
-            vl.loadNamedStyle(k)
-            vl.setName(self.get_parameter("SELEC_NAME"))
-            pr = vl.dataProvider()
-            fet = QgsFeature()
-            fet.setGeometry(QgsGeometry(feature.geometry()))  # copy the geometry
-            pr.addFeatures([fet])
-            vl.updateExtents()
-            move_layer(vl, 0)
+        vl = self.iface.addVectorLayer("Polygon?crs=epsg:25831&field=id:integer&index=yes", "temp_print_polygon", "memory")
+        k = self.get_parameter("ARXIU_QML")
+        if k.strip() == "":
+            k=os.path.join(self.plugin_dir,"FitxaUrban.qml")
+        vl.loadNamedStyle(k)
+        vl.setName(self.get_parameter("SELEC_NAME"))
+        pr = vl.dataProvider()
+        fet = QgsFeature()
+        fet.setGeometry(QgsGeometry(feature.geometry()))  # copy the geometry
+        pr.addFeatures([fet])
+        vl.updateExtents()
+        move_layer(vl, 0)
 
-            def refreshed():
+        def refreshed():
 
-                # Disconnect signal
-                self.iface.mapCanvas().mapCanvasRefreshed.disconnect(refreshed)
-                composition = None
-                for item in QgsProject.instance().layoutManager().printLayouts():
-                    if item.name() == self.get_parameter("PDF_UBICACIO") :
-                        composition = item
-                        break
-                if composition is None:
-                    self.show_message("C", "No s'ha trobat plantilla fitxa en el projecte")
-                    return
+            # Disconnect signal
+            self.iface.mapCanvas().mapCanvasRefreshed.disconnect(refreshed)
+            composition = None
+            for item in QgsProject.instance().layoutManager().printLayouts():
+                if item.name() == self.get_parameter("PDF_UBICACIO") :
+                    composition = item
+                    break
+            if composition is None:
+                self.show_message("C", "No s'ha trobat plantilla fitxa en el projecte")
+                return
 
-                # Set values
-                set_project_variable(self.get_parameter("REFCAT_ITEM"), self.refcat)
-                set_project_variable(self.get_parameter("AREA_ITEM"), '{:.0f}'.format(self.area))
-                set_project_variable(self.get_parameter("ADRECA_ITEM"), self.adreca)
+            # Set values
+            set_project_variable(self.get_parameter("REFCAT_ITEM"), self.refcat)
+            set_project_variable(self.get_parameter("AREA_ITEM"), '{:.0f}'.format(self.area))
+            set_project_variable(self.get_parameter("ADRECA_ITEM"), self.adreca)
 
-                # Set main map to the propper position
-                #main_map = composition.itemById('Mapa principal')
-                #main_map = composition.referenceMap()
-                main_map=layout_item(composition,self.get_parameter("MAPA_NAME"),QgsLayoutItemMap)
-                center_map(main_map, feature)
+            # Set main map to the propper position
+            #main_map = composition.itemById('Mapa principal')
+            #main_map = composition.referenceMap()
+            main_map=layout_item(composition,self.get_parameter("MAPA_NAME"),QgsLayoutItemMap)
+            center_map(main_map, feature)
 
-                # Add temporal layer to composition
-                legend = layout_item(composition,self.get_parameter("LLEGENDA_NAME"),QgsLayoutItemLegend)
-                legend_root = legend.model().rootGroup()
-                legend_root.insertLayer(0, vl)
+            # Add temporal layer to composition
+            legend = layout_item(composition,self.get_parameter("LLEGENDA_NAME"),QgsLayoutItemLegend)
+            legend_root = legend.model().rootGroup()
+            legend_root.insertLayer(0, vl)
 
-                # Make PDF
-                nl = ""
-                if self.get_parameter("DIR_PDFS_MULTI") == "SI":
-                    nl = socket.gethostname()+"("+time.strftime("%d")+")_"
-                filename = os.path.join(self.dir_pdfs, '{}{}_ubicacio.pdf'.format(nl,self.refcat))
-                exporter = QgsLayoutExporter(composition)
-                exporter.exportToPdf(filename,QgsLayoutExporter.PdfExportSettings())
-                open_file(filename)
+            # Make PDF
+            nl = ""
+            if self.get_parameter("DIR_PDFS_MULTI") == "SI":
+                nl = socket.gethostname()+"("+time.strftime("%d")+")_"
+            filename = os.path.join(self.dir_pdfs, '{}{}_ubicacio.pdf'.format(nl,self.refcat))
+            exporter = QgsLayoutExporter(composition)
+            exporter.exportToPdf(filename,QgsLayoutExporter.PdfExportSettings())
+            open_file(filename)
 
-                # Delete temporary layer
-                legend_root.removeLayer(vl)
-                QgsProject.instance().removeMapLayers([vl.id()])
+            # Delete temporary layer
+            legend_root.removeLayer(vl)
+            QgsProject.instance().removeMapLayers([vl.id()])
 
-                self.iface.mapCanvas().refresh()
-
-            self.iface.mapCanvas().mapCanvasRefreshed.connect(refreshed)
             self.iface.mapCanvas().refresh()
 
-        # Connect the click signal to the functions
-        self.dialog.lblClass.linkActivated.connect(self.web_dialog)
-        self.dialog.btnParcelaPdf.clicked.connect(make_show_ubicacio_pdf)
-        self.dialog.btnClauPdf_1.clicked.connect(self.create_pdf_zones)
-        self.dialog.btn_pdf_annex.clicked.connect(self.open_pdf_annex)
-
-        self.dialog.exec_()
+        self.iface.mapCanvas().mapCanvasRefreshed.connect(refreshed)
+        self.iface.mapCanvas().refresh()
 
 
     def web_dialog(self, url):
