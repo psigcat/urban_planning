@@ -76,7 +76,7 @@ class FitxaUrban:
             return
         
         # Prepara directori informes
-        self.dir_pdfs = self.Config("DIR_PDFS")
+        self.dir_pdfs = self.get_parameter("DIR_PDFS")
         if self.dir_pdfs == "":
             self.dir_pdfs = os.path.join(self.project_folder, 'pdfs')
         d = QDir(self.dir_pdfs)
@@ -84,7 +84,7 @@ class FitxaUrban:
             if d.mkdir(self.dir_pdfs) == 0 :
                 self.Missatge("C", "No s'ha pogut crear carpeta directori pdf's\n\n"+self.dir_pdfs)
                 return
-        if self.Config("DIR_PDFS_MULTI") == "SI":
+        if self.get_parameter("DIR_PDFS_MULTI") == "SI":
             nl = socket.gethostname()+"("+time.strftime("%d")+")_"
             lf = glob.glob(os.path.join(self.dir_pdfs, socket.gethostname()+"(*"))
             for uf in lf: 
@@ -94,16 +94,16 @@ class FitxaUrban:
                     except OSError:
                         pass
 
-        self.dir_html = self.Config("DIR_HTML")
+        self.dir_html = self.get_parameter("DIR_HTML")
         if self.dir_html == "":
             self.dir_html = os.path.join(self.project_folder, 'html')
-        self.dir_sector = self.Config("DIR_SEC")
+        self.dir_sector = self.get_parameter("DIR_SEC")
         if self.dir_sector == "":
             self.dir_sector = os.path.join(self.dir_html, 'sectors')
-        self.dir_classi = self.Config("DIR_CLAS")
+        self.dir_classi = self.get_parameter("DIR_CLAS")
         if self.dir_classi == "":
             self.dir_classi = os.path.join(self.dir_html, 'classificacio')
-        self.dir_orden = self.Config("DIR_ORD")
+        self.dir_orden = self.get_parameter("DIR_ORD")
         if self.dir_orden == "":
             self.dir_orden = os.path.join(self.dir_html, 'ordenacions')
         
@@ -118,7 +118,7 @@ class FitxaUrban:
         """ Get database queries from configuration files """
 
         self.SQL_FITXA = ""
-        ff = self.Config("ARXIU_SQL")
+        ff = self.get_parameter("ARXIU_SQL")
         if ff.strip() == "":
             ff = str(os.path.join(self.project_folder, "config", "FitxaUrban_sql.txt"))
         f = open(ff, 'r')
@@ -130,7 +130,7 @@ class FitxaUrban:
         f.close()
 
         self.SQL_FITXA_ZONA = ""
-        ff = self.Config("ARXIU_SQL_ZONA")
+        ff = self.get_parameter("ARXIU_SQL_ZONA")
         if ff.strip() == "":
             ff = str(os.path.join(self.project_folder, "config", "FitxaUrban_sql_zona.txt"))
         f = open(ff, 'r')
@@ -152,14 +152,14 @@ class FitxaUrban:
             db=QSqlDatabase()
             db.removeDatabase("FitxaUrban")
         db = QSqlDatabase.addDatabase("QPSQL","FitxaUrban")
-        if self.Config("BD_SERVICE") == "" :
-            db.setHostName(self.Config("BD_HOST"))
-            db.setDatabaseName(self.Config("BD_DATABASE"))
-            db.setUserName(self.Config("BD_USER"))
-            db.setPassword(self.Config("BD_PASS"))
-            db.setPort(int(self.Config("BD_PORT")))
+        if self.get_parameter("BD_SERVICE") == "" :
+            db.setHostName(self.get_parameter("BD_HOST"))
+            db.setDatabaseName(self.get_parameter("BD_DATABASE"))
+            db.setUserName(self.get_parameter("BD_USER"))
+            db.setPassword(self.get_parameter("BD_PASS"))
+            db.setPort(int(self.get_parameter("BD_PORT")))
         else:
-            db.setConnectOptions(f"service={self.Config('BD_SERVICE')}")
+            db.setConnectOptions(f"service={self.get_parameter('BD_SERVICE')}")
         db.open()
         if db.isOpen() == 0 :
             self.Missatge("C", "No s'ha pogut obrir la Base de Dades\n\n'"+db.lastError().text())
@@ -199,10 +199,13 @@ class FitxaUrban:
         return conf
 
 
-    def Config(self, param):
+    def get_parameter(self, param):
+        """ Get value of parameter @param from configuration file """
 
         if self.config_data.find(param + " = ") == -1:
+            self.log_info(f"Parameter not found: {param}")
             return ""
+
         value = self.config_data.split(param + " = ")[1].split("\n")[0].strip()
         return value
 
@@ -303,15 +306,15 @@ class FitxaUrban:
             qu.clear()
             return
 
-        camps = self.Config("ZONES_ITEMS")
-        per_int = qu.record().indexOf(self.Config("ZONA_AREA_%_NAME"))
-        per_min = int(self.Config("ZONA_AREA_%_MINIM"))
+        camps = self.get_parameter("ZONES_ITEMS")
+        per_int = qu.record().indexOf(self.get_parameter("ZONA_AREA_%_NAME"))
+        per_min = int(self.get_parameter("ZONA_AREA_%_MINIM"))
         lispdfs = []
         while qu.next():
             if qu.value(per_int) >= per_min:
                 composition = None
                 for item in QgsProject.instance().layoutManager().printLayouts():
-                    if item.name() == self.Config("PDF_ZONES") :
+                    if item.name() == self.get_parameter("PDF_ZONES") :
                         composition = item
                         break
                 if composition is None :
@@ -323,16 +326,16 @@ class FitxaUrban:
                     QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), camps.split(",")[i], qu.value(i))
                     if self.sector_codi != "NULL":
                         QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),
-                            self.Config("DESCR_SECTOR_ITEM"), f'{self.sector_codi} - {self.sector_desc}')
+                            self.get_parameter("DESCR_SECTOR_ITEM"), f'{self.sector_codi} - {self.sector_desc}')
                     else:
                         QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),
-                            self.Config("DESCR_SECTOR_ITEM"), None)
+                            self.get_parameter("DESCR_SECTOR_ITEM"), None)
 
                 QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),
-                    self.Config("DESCR_CLASSI_ITEM"), f'{self.classi_codi} - {self.classi_desc}')
+                    self.get_parameter("DESCR_CLASSI_ITEM"), f'{self.classi_codi} - {self.classi_desc}')
                 composition.refresh()
                 nl = ""
-                if self.Config("DIR_PDFS_MULTI") == "SI":
+                if self.get_parameter("DIR_PDFS_MULTI") == "SI":
                     nl = socket.gethostname() + "(" + time.strftime("%d")+")_"
 
                 filename = f'{nl}{self.refcat}_zona_{qu.value(0)}.pdf'
@@ -347,7 +350,7 @@ class FitxaUrban:
                     self.log_info(f"Fitxer generat correctament: {filename}")
                 else:
                     self.Missatge("W", "error")
-                if self.Config("PDF_ZONES_VISU") != "1":
+                if self.get_parameter("PDF_ZONES_VISU") != "1":
                     openFile(filepath)
                 lispdfs.append(filepath)
 
@@ -361,12 +364,12 @@ class FitxaUrban:
         for file in lispdfs:
             merger.append(PdfFileReader(file))
         nl = ""
-        if self.Config("DIR_PDFS_MULTI") == "SI":
+        if self.get_parameter("DIR_PDFS_MULTI") == "SI":
             nl = socket.gethostname() + "(" + time.strftime("%d") + ")_"
         filename = f'{nl}{self.refcat}_zones.pdf'
         filepath = os.path.join(self.dir_pdfs, filename)
         merger.write(filepath)
-        if self.Config("PDF_ZONES_VISU") != "2":
+        if self.get_parameter("PDF_ZONES_VISU") != "2":
             openFile(filepath)
 
 
@@ -394,7 +397,7 @@ class FitxaUrban:
         if len(features) > 1:
             layer.selectByIds([features[0].id()])
         feature = features[0]
-        id_index = feature.fieldNameIndex(self.Config("ID_NAME"))
+        id_index = feature.fieldNameIndex(self.get_parameter("ID_NAME"))
         if id_index < 0:
             self.Missatge("C", "Manca paràmetre ID_INDEX")
             return
@@ -428,7 +431,7 @@ class FitxaUrban:
         self.dialog.setFixedSize(self.dialog.size())
         if self.dtop!= 0 and self.dleft != 0:
             self.dialog.setGeometry(self.dleft,self.dtop,self.dialog.width(),self.dialog.height())
-        self.dialog.ui.label_5.setPixmap(QPixmap(self.Config("ARXIU_LOGO")))
+        self.dialog.ui.label_5.setPixmap(QPixmap(self.get_parameter("ARXIU_LOGO")))
         self.dialog.ui.Sortir.clicked.connect(self.close_dialog)
 
         # Static links
@@ -444,13 +447,13 @@ class FitxaUrban:
         self.dialog.ui.lblParamEdificacio.linkActivated.connect(self.webDialog)
 
         # Show data
-        self.refcat=str(qu.value(int(self.Config("REFCAT"))))
-        self.area=float(qu.value(int(self.Config("AREA"))))
-        self.adreca=str(qu.value(int(self.Config("ADRECA"))))
-        self.sector_codi = str(qu.value(int(self.Config("CODI_SECTOR"))))
-        self.sector_desc=str(qu.value(int(self.Config("DESCR_SECTOR"))))
-        self.classi_codi=str(qu.value(int(self.Config("CODI_CLASSI"))))
-        self.classi_desc=str(qu.value(int(self.Config("DESCR_CLASSI"))))
+        self.refcat=str(qu.value(int(self.get_parameter("REFCAT"))))
+        self.area=float(qu.value(int(self.get_parameter("AREA"))))
+        self.adreca=str(qu.value(int(self.get_parameter("ADRECA"))))
+        self.sector_codi = str(qu.value(int(self.get_parameter("CODI_SECTOR"))))
+        self.sector_desc=str(qu.value(int(self.get_parameter("DESCR_SECTOR"))))
+        self.classi_codi=str(qu.value(int(self.get_parameter("CODI_CLASSI"))))
+        self.classi_desc=str(qu.value(int(self.get_parameter("DESCR_CLASSI"))))
         self.dialog.ui.refcat.setText(u'{}'.format(self.refcat))
         self.dialog.ui.area.setText((u'{}'.format(round(self.area,1))).rstrip('0').rstrip('.'))
         self.dialog.ui.txtAdreca.setText(u'{}'.format(self.adreca))
@@ -462,9 +465,9 @@ class FitxaUrban:
             self.dialog.ui.lblSector.setHidden(True)
         self.dialog.ui.txtClass.setText(u'{} - {}'.format(self.classi_codi, self.classi_desc))
         self.dialog.ui.lblClass.setText(u"<a href='file:///{:s}'>Veure normativa</a>".format(os.path.join(self.dir_classi,'{:s}.htm'.format('{}'.format(self.classi_codi)))))
-        self.codes = str(qu.value(int(self.Config("CODI_ZONES")))).replace("{","").replace("}","")
-        self.percents = str(qu.value(int(self.Config("PERCENT_ZONES")))).replace("{","").replace("}","")
-        self.general_codes = str(qu.value(int(self.Config("CODI_GENERAL_ZONES")))).replace("{","").replace("}","")
+        self.codes = str(qu.value(int(self.get_parameter("CODI_ZONES")))).replace("{", "").replace("}", "")
+        self.percents = str(qu.value(int(self.get_parameter("PERCENT_ZONES")))).replace("{", "").replace("}", "")
+        self.general_codes = str(qu.value(int(self.get_parameter("CODI_GENERAL_ZONES")))).replace("{", "").replace("}", "")
         for i in range(0, 4):
             txtClau = getattr(self.dialog.ui, 'txtClau_{}'.format(i + 1))
             txtPer = getattr(self.dialog.ui, 'txtPer_{}'.format(i + 1))
@@ -499,16 +502,16 @@ class FitxaUrban:
 
             # Make temporary layer
             try:
-                self.iface.removeMapLayers(self.Config("SELEC_NAME"))
+                self.iface.removeMapLayers(self.get_parameter("SELEC_NAME"))
             except:
                 a = 1
 
             vl = self.iface.addVectorLayer("Polygon?crs=epsg:25831&field=id:integer&index=yes", "temp_print_polygon", "memory")
-            k = self.Config("ARXIU_QML")
+            k = self.get_parameter("ARXIU_QML")
             if k.strip() == "":
                 k=os.path.join(self.plugin_dir,"FitxaUrban.qml")
             vl.loadNamedStyle(k)
-            vl.setName(self.Config("SELEC_NAME"))
+            vl.setName(self.get_parameter("SELEC_NAME"))
             pr = vl.dataProvider()
             fet = QgsFeature()
             fet.setGeometry(QgsGeometry(feature.geometry()))  # copy the geometry
@@ -522,28 +525,28 @@ class FitxaUrban:
                 self.iface.mapCanvas().mapCanvasRefreshed.disconnect(refreshed)
                 composition = None
                 for item in QgsProject.instance().layoutManager().printLayouts():
-                    if item.name() == self.Config("PDF_UBICACIO") :
+                    if item.name() == self.get_parameter("PDF_UBICACIO") :
                         composition = item
                         break
                 if composition is None:
                     self.Missatge("C","No s'ha trobat plantilla fitxa en el projecte")
                     return
                 # Set values
-                QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),self.Config("REFCAT_ITEM"), self.refcat)
-                QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),self.Config("AREA_ITEM"), '{:.0f}'.format(self.area))
-                QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),self.Config("ADRECA_ITEM"), self.adreca)
+                QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),self.get_parameter("REFCAT_ITEM"), self.refcat)
+                QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),self.get_parameter("AREA_ITEM"), '{:.0f}'.format(self.area))
+                QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),self.get_parameter("ADRECA_ITEM"), self.adreca)
                 # Set main map to the propper position
                 #main_map = composition.itemById('Mapa principal')
                 #main_map = composition.referenceMap()
-                main_map=layout_item(composition,self.Config("MAPA_NAME"),QgsLayoutItemMap)
+                main_map=layout_item(composition,self.get_parameter("MAPA_NAME"),QgsLayoutItemMap)
                 centerMap(main_map, feature)
                 # Add temporal layer to composition
-                legend = layout_item(composition,self.Config("LLEGENDA_NAME"),QgsLayoutItemLegend)
+                legend = layout_item(composition,self.get_parameter("LLEGENDA_NAME"),QgsLayoutItemLegend)
                 legend_root = legend.model().rootGroup()
                 legend_root.insertLayer(0, vl)
                 # Make PDF
                 nl = ""
-                if self.Config("DIR_PDFS_MULTI") == "SI":
+                if self.get_parameter("DIR_PDFS_MULTI") == "SI":
                     nl = socket.gethostname()+"("+time.strftime("%d")+")_"
                 filename = os.path.join(self.dir_pdfs, '{}{}_ubicacio.pdf'.format(nl,self.refcat))
                 exporter = QgsLayoutExporter(composition)
