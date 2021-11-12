@@ -330,16 +330,14 @@ class FitxaUrban:
 
             total = query.record().count()
             for i in range(total):
-                QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), camps.split(",")[i], query.value(i))
+                set_project_variable(camps.split(",")[i], query.value(i))
+                sector_item = self.get_parameter("DESCR_SECTOR_ITEM")
+                value = None
                 if self.sector_codi != "NULL":
-                    QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),
-                        self.get_parameter("DESCR_SECTOR_ITEM"), f'{self.sector_codi} - {self.sector_desc}')
-                else:
-                    QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),
-                        self.get_parameter("DESCR_SECTOR_ITEM"), None)
+                    value = f'{self.sector_codi} - {self.sector_desc}'
+                set_project_variable(sector_item, value)
 
-            QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),
-                self.get_parameter("DESCR_CLASSI_ITEM"), f'{self.classi_codi} - {self.classi_desc}')
+            set_project_variable(self.get_parameter("DESCR_CLASSI_ITEM"), f'{self.classi_codi} - {self.classi_desc}')
             layout_zones.refresh()
             nl = ""
             if self.get_parameter("DIR_PDFS_MULTI") == "SI":
@@ -540,19 +538,23 @@ class FitxaUrban:
                 if composition is None:
                     self.show_message("C", "No s'ha trobat plantilla fitxa en el projecte")
                     return
+
                 # Set values
-                QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),self.get_parameter("REFCAT_ITEM"), self.refcat)
-                QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),self.get_parameter("AREA_ITEM"), '{:.0f}'.format(self.area))
-                QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(),self.get_parameter("ADRECA_ITEM"), self.adreca)
+                set_project_variable(self.get_parameter("REFCAT_ITEM"), self.refcat)
+                set_project_variable(self.get_parameter("AREA_ITEM"), '{:.0f}'.format(self.area))
+                set_project_variable(self.get_parameter("ADRECA_ITEM"), self.adreca)
+
                 # Set main map to the propper position
                 #main_map = composition.itemById('Mapa principal')
                 #main_map = composition.referenceMap()
                 main_map=layout_item(composition,self.get_parameter("MAPA_NAME"),QgsLayoutItemMap)
                 centerMap(main_map, feature)
+
                 # Add temporal layer to composition
                 legend = layout_item(composition,self.get_parameter("LLEGENDA_NAME"),QgsLayoutItemLegend)
                 legend_root = legend.model().rootGroup()
                 legend_root.insertLayer(0, vl)
+
                 # Make PDF
                 nl = ""
                 if self.get_parameter("DIR_PDFS_MULTI") == "SI":
@@ -561,10 +563,11 @@ class FitxaUrban:
                 exporter = QgsLayoutExporter(composition)
                 exporter.exportToPdf(filename,QgsLayoutExporter.PdfExportSettings())
                 openFile(filename)
+
                 # Delete temporary layer
                 legend_root.removeLayer(vl)
                 QgsProject.instance().removeMapLayers([vl.id()])
-                # Repaint again
+
                 self.iface.mapCanvas().refresh()
 
             self.iface.mapCanvas().mapCanvasRefreshed.connect(refreshed)
@@ -771,6 +774,12 @@ def get_print_layout(layout_name):
             break
 
     return layout
+
+
+def set_project_variable(variable, value):
+    """ Set QGIS project variable """
+
+    QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), variable, value)
 
 
 # endregion
