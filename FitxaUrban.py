@@ -310,6 +310,7 @@ class FitxaUrban:
 
         camps = self.get_parameter("ZONES_ITEMS")
         per_int = query.record().indexOf(self.get_parameter("ZONA_AREA_%_NAME"))
+        index_qg_tipus = query.record().indexOf('qg_tipus')
         per_min = int(self.get_parameter("ZONA_AREA_%_MINIM"))
         lispdfs = []
 
@@ -338,14 +339,24 @@ class FitxaUrban:
                 set_project_variable(sector_item, value)
 
             set_project_variable(self.get_parameter("DESCR_CLASSI_ITEM"), f'{self.classi_codi} - {self.classi_desc}')
-            layout_zones.refresh()
+
+            # Get layout from field 'qg_tipus': 'zones' or 'sistemes'
+            layout = layout_zones
+            qg_tipus = query.value(index_qg_tipus)
+            self.log_info(f"Tipus de qualificació: {qg_tipus}")
+            if qg_tipus == 'SISTEMES':
+                layout = layout_sistemes
+            layout.refresh()
+
+            # Check if different folder per user or not
             nl = ""
             if self.get_parameter("DIR_PDFS_MULTI") == "SI":
                 nl = socket.gethostname() + "(" + time.strftime("%d")+")_"
 
+            # Export layout to PDF
             filename = f'{nl}{self.refcat}_zona_{query.value(0)}.pdf'
             filepath = os.path.join(self.dir_pdfs, filename)
-            exporter = QgsLayoutExporter(layout_zones)
+            exporter = QgsLayoutExporter(layout)
             if exporter is None:
                 self.show_message("W", "Exporter is None")
                 return
