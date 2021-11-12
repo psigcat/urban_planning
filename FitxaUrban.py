@@ -356,7 +356,7 @@ class FitxaUrban:
             else:
                 self.show_message("W", "error")
             if self.get_parameter("PDF_ZONES_VISU") != "1":
-                openFile(filepath)
+                open_file(filepath)
             lispdfs.append(filepath)
 
         query.clear()
@@ -377,7 +377,7 @@ class FitxaUrban:
         filepath = os.path.join(self.dir_pdfs, filename)
         merger.write(filepath)
         if self.get_parameter("PDF_ZONES_VISU") != "2":
-            openFile(filepath)
+            open_file(filepath)
 
 
     def run(self):
@@ -524,7 +524,7 @@ class FitxaUrban:
             fet.setGeometry(QgsGeometry(feature.geometry()))  # copy the geometry
             pr.addFeatures([fet])
             vl.updateExtents()
-            moveLayer(vl, 0)
+            move_layer(vl, 0)
 
             def refreshed():
 
@@ -548,7 +548,7 @@ class FitxaUrban:
                 #main_map = composition.itemById('Mapa principal')
                 #main_map = composition.referenceMap()
                 main_map=layout_item(composition,self.get_parameter("MAPA_NAME"),QgsLayoutItemMap)
-                centerMap(main_map, feature)
+                center_map(main_map, feature)
 
                 # Add temporal layer to composition
                 legend = layout_item(composition,self.get_parameter("LLEGENDA_NAME"),QgsLayoutItemLegend)
@@ -562,7 +562,7 @@ class FitxaUrban:
                 filename = os.path.join(self.dir_pdfs, '{}{}_ubicacio.pdf'.format(nl,self.refcat))
                 exporter = QgsLayoutExporter(composition)
                 exporter.exportToPdf(filename,QgsLayoutExporter.PdfExportSettings())
-                openFile(filename)
+                open_file(filename)
 
                 # Delete temporary layer
                 legend_root.removeLayer(vl)
@@ -604,7 +604,7 @@ class FitxaUrban:
             filename = os.path.join(self.dir_pdfs,filename)
             printer.setOutputFileName(filename)
             dialog.ui.webView.print_(printer)
-            openFile(filename)
+            open_file(filename)
 
         dialog.ui.Sortir.clicked.connect(dialog.close)
         dialog.ui.Exportar.clicked.connect(exportPDF)
@@ -686,7 +686,7 @@ class FitxaUrbanTool(QgsMapTool):
 
 # region Utilities
 
-def openFile(path):
+def open_file(path):
     """Opens a file with the default application."""
 
     # Multiple OS support
@@ -698,13 +698,13 @@ def openFile(path):
         subprocess.Popen(['xdg-open', path])
 
 
-def centerMap(map, feature):
+def center_map(map, feature):
 
-    newExtent = centerRect(map.extent(), feature.geometry().boundingBox().center())
+    newExtent = center_rect(map.extent(), feature.geometry().boundingBox().center())
     map.setExtent(newExtent)
 
 
-def centerRect(rect, point):
+def center_rect(rect, point):
 
     hw = rect.width() / 2
     hh = rect.height() / 2
@@ -715,7 +715,7 @@ def centerRect(rect, point):
     return type(rect)(xMin, yMin, xMax, yMax)
 
 
-def moveLayer(layer, pos):
+def move_layer(layer, pos):
 
     root = QgsProject.instance().layerTreeRoot()
     node = root.findLayer(layer.id())
@@ -725,7 +725,7 @@ def moveLayer(layer, pos):
     parent.removeChildNode(node)
 
 
-def askPrinter():
+def ask_printer():
 
     printer = QPrinter()
     select = QPrintDialog(printer)
