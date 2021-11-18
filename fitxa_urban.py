@@ -122,28 +122,34 @@ class FitxaUrban:
     def prepare_queries(self):
         """ Get database queries from configuration files """
 
-        self.SQL_FITXA = ""
+        self.sql_fitxa = ""
         ff = self.get_parameter("ARXIU_SQL")
         if ff.strip() == "":
             ff = str(os.path.join(self.project_folder, "config", "FitxaUrban_sql.txt"))
+        if not os.path.exists(ff):
+            self.show_message("C", f"File not found:\n {ff}")
+            return
         f = open(ff, 'r')
-        if f.closed :
-            self.show_message("C", "Error al llegir \n\n" + ff)
+        if f.closed:
+            self.show_message("C", f"Error al llegir \n\n{ff}")
             return
         for reg in f :
-            self.SQL_FITXA += reg
+            self.sql_fitxa += reg
         f.close()
 
-        self.SQL_FITXA_ZONA = ""
+        self.sql_fitxa_zona = ""
         ff = self.get_parameter("ARXIU_SQL_ZONA")
         if ff.strip() == "":
             ff = str(os.path.join(self.project_folder, "config", "FitxaUrban_sql_zona.txt"))
+        if not os.path.exists(ff):
+            self.show_message("C", f"File not found:\n {ff}")
+            return
         f = open(ff, 'r')
-        if f.closed :
-            self.show_message("C", "Error al llegir \n\n" + ff)
+        if f.closed:
+            self.show_message("C", f"Error al llegir \n\n{ff}")
             return
         for reg in f :
-            self.SQL_FITXA_ZONA += reg
+            self.sql_fitxa_zona += reg
         f.close()
 
 
@@ -154,7 +160,7 @@ class FitxaUrban:
 
         if self.db_status == "SI" :
             db.close()
-            db=QSqlDatabase()
+            db = QSqlDatabase()
             db.removeDatabase("FitxaUrban")
         db = QSqlDatabase.addDatabase("QPSQL","FitxaUrban")
         if self.get_parameter("BD_SERVICE") == "" :
@@ -306,7 +312,7 @@ class FitxaUrban:
         global db
 
         query = QSqlQuery(db)
-        sql = f"{self.SQL_FITXA_ZONA.split('$ID_VALUE')[0]}{self.id_selec}{self.SQL_FITXA_ZONA.split('$ID_VALUE')[1]}"
+        sql = self.sql_fitxa_zona.replace('$ID_VALUE', str(self.id_selec))
         if query.exec_(sql) == 0:
             msg = f"Error al llegir informació per fitxa zona\n\n{query.lastError().text()}"
             self.show_message("C", msg)
@@ -450,18 +456,17 @@ class FitxaUrban:
             self.show_message("C", "Manca paràmetre ID_INDEX")
             return
 
-        self.id_selec = feature[id_index]
-
         global db
-        qu = QSqlQuery(db)
-        sq = self.SQL_FITXA.split("$ID_VALUE")[0]+str(self.id_selec)+self.SQL_FITXA.split("$ID_VALUE")[1]
-        if qu.exec_(sq) == 0:
-            self.show_message("C", f"Error al llegir informació per fitxa\n\n{qu.lastError().text()}")
+        query = QSqlQuery(db)
+        self.id_selec = feature[id_index]
+        sql = self.sql_fitxa.replace('$ID_VALUE', str(self.id_selec))
+        if query.exec_(sql) == 0:
+            self.show_message("C", f"Error al llegir informació per fitxa\n\n{query.lastError().text()}")
             return
-        if qu.next() == 0:
-            self.show_message("C", f"No s'ha trobat informació per fitxa\n\n{qu.lastError().text()}")
+        if query.next() == 0:
+            self.show_message("C", f"No s'ha trobat informació per fitxa\n\n{query.lastError().text()}")
             return
-        if qu.value(0) is None:
+        if query.value(0) is None:
             self.show_message("C", "No s'ha trobat informació per la fitxa")
             return
 
@@ -476,7 +481,6 @@ class FitxaUrban:
                 self.dleft = 0
 
         self.dialog = FitxaUrbanDialog()
-
         self.dialog.setFixedSize(self.dialog.size())
         if self.dtop!= 0 and self.dleft != 0:
             self.dialog.setGeometry(self.dleft, self.dtop, self.dialog.width(), self.dialog.height())
@@ -510,13 +514,13 @@ class FitxaUrban:
         self.dialog.lblParamEdificacio.linkActivated.connect(self.web_dialog)
 
         # Show data
-        self.refcat = str(qu.value(int(self.get_parameter("REFCAT"))))
-        self.area = float(qu.value(int(self.get_parameter("AREA"))))
-        self.adreca = str(qu.value(int(self.get_parameter("ADRECA"))))
-        self.sector_codi = str(qu.value(int(self.get_parameter("CODI_SECTOR"))))
-        self.sector_desc = str(qu.value(int(self.get_parameter("DESCR_SECTOR"))))
-        self.classi_codi = str(qu.value(int(self.get_parameter("CODI_CLASSI"))))
-        self.classi_desc = str(qu.value(int(self.get_parameter("DESCR_CLASSI"))))
+        self.refcat = str(query.value(int(self.get_parameter("REFCAT"))))
+        self.area = float(query.value(int(self.get_parameter("AREA"))))
+        self.adreca = str(query.value(int(self.get_parameter("ADRECA"))))
+        self.sector_codi = str(query.value(int(self.get_parameter("CODI_SECTOR"))))
+        self.sector_desc = str(query.value(int(self.get_parameter("DESCR_SECTOR"))))
+        self.classi_codi = str(query.value(int(self.get_parameter("CODI_CLASSI"))))
+        self.classi_desc = str(query.value(int(self.get_parameter("DESCR_CLASSI"))))
         self.dialog.refcat.setText(self.refcat)
         area = (u'{}'.format(round(self.area,1))).rstrip('0').rstrip('.')
         self.dialog.area.setText(area)
@@ -532,10 +536,10 @@ class FitxaUrban:
         self.dialog.txtClass.setText(f'{self.classi_codi} - {self.classi_desc}')
         lbl_class = u"<a href='file:///{:s}'>Veure normativa</a>".format(os.path.join(self.dir_classi,'{:s}.htm'.format('{}'.format(self.classi_codi))))
         self.dialog.lblClass.setText(lbl_class)
-        self.codes = str(qu.value(int(self.get_parameter("CODI_ZONES")))).replace("{", "").replace("}", "")
-        self.percents = str(qu.value(int(self.get_parameter("PERCENT_ZONES")))).replace("{", "").replace("}", "")
-        self.general_codes = str(qu.value(int(self.get_parameter("CODI_GENERAL_ZONES")))).replace("{", "").replace("}", "")
-        qu.clear()
+        self.codes = str(query.value(int(self.get_parameter("CODI_ZONES")))).replace("{", "").replace("}", "")
+        self.percents = str(query.value(int(self.get_parameter("PERCENT_ZONES")))).replace("{", "").replace("}", "")
+        self.general_codes = str(query.value(int(self.get_parameter("CODI_GENERAL_ZONES")))).replace("{", "").replace("}", "")
+        query.clear()
 
         # Enable button 'Obrir Annex' only for codes: '1a1', '3b1'
         self.dialog.btn_pdf_annex.setEnabled(False)
@@ -598,7 +602,7 @@ class FitxaUrban:
         vl.setName(self.get_parameter("SELEC_NAME"))
         pr = vl.dataProvider()
         fet = QgsFeature()
-        fet.setGeometry(QgsGeometry(feature.geometry()))  # copy the geometry
+        fet.setGeometry(QgsGeometry(feature.geometry()))
         pr.addFeatures([fet])
         vl.updateExtents()
         move_layer(vl, 0)
@@ -622,8 +626,6 @@ class FitxaUrban:
             set_project_variable(self.get_parameter("ADRECA_ITEM"), self.adreca)
 
             # Set main map to the propper position
-            #main_map = composition.itemById('Mapa principal')
-            #main_map = composition.referenceMap()
             main_map= layout_item(composition, self.get_parameter("MAPA_NAME"), QgsLayoutItemMap)
             center_map(main_map, feature)
 
@@ -653,7 +655,7 @@ class FitxaUrban:
 
     def web_dialog(self, url):
 
-        QgsMessageLog.logMessage(f"Opened url: {url}")
+        self.log_info(f"Opened url: {url}")
         dialog = FitxaUrbanVista()
         dialog.webView.setUrl(QUrl(url))
         dialog.webView.setWhatsThis(url)
@@ -669,7 +671,7 @@ class FitxaUrban:
         printer.setOrientation(QPrinter.Portrait)
         printer.setPageMargins(15, 15, 15, 15, QPrinter.Millimeter)
         filename = str(os.path.splitext(os.path.basename(dialog.webView.whatsThis()))[0])+u".pdf"
-        filename = os.path.join(self.dir_pdfs,filename)
+        filename = os.path.join(self.dir_pdfs, filename)
         printer.setOutputFileName(filename)
         dialog.webView.print_(printer)
         open_file(filename)
