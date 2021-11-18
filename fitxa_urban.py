@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 from PyQt5.QtCore import QSettings, QUrl, QDir
-from PyQt5.QtGui import QCursor, QIcon, QPixmap
+from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox
 from PyQt5.QtPrintSupport import QPrinter
 from PyQt5.QtSql import *
 from qgis.core import QgsFeature, QgsGeometry, QgsMessageLog, QgsProject, QgsLayoutExporter,  QgsRectangle, \
     QgsLayoutItemMap, QgsLayoutItemLegend
-from qgis.gui import QgsMapTool
 
 import os, socket, time, glob
 from functools import partial
@@ -15,6 +14,7 @@ from .lib.PyPDF2 import PdfFileMerger, PdfFileReader
 from .lib.fitxa_urban_utils import open_file, center_map, move_layer, layout_item, get_print_layout, set_project_variable
 from .ui_manager import FitxaUrbanDialog
 from .ui_manager import FitxaUrbanVista
+from .fitxa_urban_tool import FitxaUrbanTool
 
 global db
 
@@ -50,7 +50,7 @@ class FitxaUrban:
         self.dleft = 0
 
         filename = os.path.abspath(os.path.join(self.plugin_dir, "img", "FitxaUrban_logo.png"))
-        self.icon = QIcon(str(filename))
+        self.icon = QIcon(filename)
         self.tool = FitxaUrbanTool(self.iface.mapCanvas(), self)
         self.action = QAction(self.icon, "FitxaUrban", self.iface.mainWindow())
         self.action.setCheckable(True)
@@ -687,45 +687,3 @@ class FitxaUrban:
         else:
             return None
 
-
-
-class FitxaUrbanTool(QgsMapTool):
-
-    def __init__(self, canvas, plugin):
-
-        super(QgsMapTool, self).__init__(canvas)
-        self.canvas = canvas
-        self.plugin = plugin
-        k = ""
-        if str(self.plugin.config_data).find("ARXIU_PUNTER" + " = ") != -1:
-            k = str(self.plugin.config_data).split("ARXIU_PUNTER" + " = ")[1].split("\n")[0]
-        if k.strip() == "":
-            k = os.path.join(self.plugin.plugin_dir, "img", "FitxaUrban_punter.png")
-        self.setCursor(QCursor(QPixmap(k), 1, 1))
-
-
-    def canvasReleaseEvent(self, e):
-        """ Activate config layer """
-
-        k = ""
-        if self.plugin.config_data.find("LAYER_NAME" + " = ") != -1:
-            k = self.plugin.config_data.split("LAYER_NAME" + " = ")[1].split("\n")[0]
-        if k != "":
-            registry = QgsProject.instance()
-            layer = registry.mapLayersByName(k)[0]
-            self.plugin.iface.setActiveLayer(layer)
-        layer = self.canvas.currentLayer()
-        if layer is None:
-            return
-
-        point = e.mapPoint()
-        radius = self.canvas.mapUnitsPerPixel()
-        rect = QgsRectangle(point.x(), point.y(), point.x() + radius, point.y() + radius)
-        layer.selectByRect(rect)
-        self.plugin.run()
-
-
-# region Utilities
-
-
-# endregion
