@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
-from PyQt5.QtCore import QCoreApplication, QSettings, Qt, QUrl, QDir
+from PyQt5.QtCore import QSettings, QUrl, QDir
 from PyQt5.QtGui import QCursor, QIcon, QPixmap
-from PyQt5.QtWidgets import QAction, QDialog, QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QAction, QFileDialog, QMessageBox
 from PyQt5.QtPrintSupport import QPrinter
 from PyQt5.QtSql import *
-
-from qgis.core import QgsExpressionContextUtils, QgsFeature, QgsGeometry, QgsMessageLog, QgsProject, QgsLayoutExporter, \
-    QgsRectangle, QgsLayoutItemMap, QgsLayoutMultiFrame, QgsLayoutFrame, QgsLayoutItemLegend
+from qgis.core import QgsFeature, QgsGeometry, QgsMessageLog, QgsProject, QgsLayoutExporter,  QgsRectangle, \
+    QgsLayoutItemMap, QgsLayoutItemLegend
 from qgis.gui import QgsMapTool
 
-import os, sys, subprocess, socket, time, glob, sip
+import os, socket, time, glob
 from functools import partial
-
 from .PyPDF2 import PdfFileMerger, PdfFileReader
+
+from .lib.fitxa_urban_utils import open_file, center_map, move_layer, layout_item, get_print_layout, set_project_variable
 from .ui_manager import FitxaUrbanDialog
 from .ui_manager import FitxaUrbanVista
 
@@ -624,11 +624,11 @@ class FitxaUrban:
             # Set main map to the propper position
             #main_map = composition.itemById('Mapa principal')
             #main_map = composition.referenceMap()
-            main_map=layout_item(composition,self.get_parameter("MAPA_NAME"),QgsLayoutItemMap)
+            main_map= layout_item(composition, self.get_parameter("MAPA_NAME"), QgsLayoutItemMap)
             center_map(main_map, feature)
 
             # Add temporal layer to composition
-            legend = layout_item(composition,self.get_parameter("LLEGENDA_NAME"),QgsLayoutItemLegend)
+            legend = layout_item(composition, self.get_parameter("LLEGENDA_NAME"), QgsLayoutItemLegend)
             legend_root = legend.model().rootGroup()
             legend_root.insertLayer(0, vl)
 
@@ -657,7 +657,6 @@ class FitxaUrban:
         dialog = FitxaUrbanVista()
         dialog.webView.setUrl(QUrl(url))
         dialog.webView.setWhatsThis(url)
-        dialog.Sortir.clicked.connect(dialog.close)
         dialog.Exportar.clicked.connect(partial(self.export_pdf, dialog))
         dialog.exec_()
 
@@ -727,101 +726,6 @@ class FitxaUrbanTool(QgsMapTool):
 
 
 # region Utilities
-
-def open_file(path):
-    """Opens a file with the default application."""
-
-    # Multiple OS support
-    if sys.platform.startswith('darwin'):
-        subprocess.Popen(['open', path])
-    elif os.name == 'nt':
-        os.startfile(path)
-    elif os.name == 'posix':
-        subprocess.Popen(['xdg-open', path])
-
-
-def center_map(map, feature):
-
-    newExtent = center_rect(map.extent(), feature.geometry().boundingBox().center())
-    map.setExtent(newExtent)
-
-
-def center_rect(rect, point):
-
-    hw = rect.width() / 2
-    hh = rect.height() / 2
-    xMin = point.x() - hw
-    xMax = point.x() + hw
-    yMin = point.y() - hh
-    yMax = point.y() + hh
-    return type(rect)(xMin, yMin, xMax, yMax)
-
-
-def move_layer(layer, pos):
-
-    root = QgsProject.instance().layerTreeRoot()
-    node = root.findLayer(layer.id())
-    clone = node.clone()
-    parent = node.parent()
-    parent.insertChildNode(pos, clone)
-    parent.removeChildNode(node)
-
-
-def ask_printer():
-
-    printer = QPrinter()
-    select = QPrintDialog(printer)
-    if select.exec_():
-        return printer
-    else:
-        return None
-
-
-def layout_item(layout, item_id, item_class):
-    """Fetch a specific item according to its type in a layout.
-    There's some sip casting conversion issues with QgsLayout::itemById.
-    Don't use it, and use this function instead.
-    See https://github.com/inasafe/inasafe/issues/4271
-    :param layout: The layout to look in.
-    :type layout: QgsLayout
-    :param item_id: The ID of the item to look for.
-    :type item_id: basestring
-    :param item_class: The expected class name.
-    :type item_class: cls
-    :return: The layout item, inherited class of QgsLayoutItem.
-    """
-
-    item = layout.itemById(item_id)
-    if item is None:
-        # no match!
-        return item
-    if issubclass(item_class, QgsLayoutMultiFrame):
-        # finding a multiframe by frame id
-        frame = sip.cast(item, QgsLayoutFrame)
-        multi_frame = frame.multiFrame()
-        return sip.cast(multi_frame, item_class)
-    else:
-        # force sip to correctly cast item to required type
-        return sip.cast(item, item_class)
-
-
-def get_print_layout(layout_name):
-    """ Get layout with name @layout_name """
-
-    print_layouts = QgsProject.instance().layoutManager().printLayouts()
-    layout = None
-    for item in print_layouts:
-        if item.name() == layout_name:
-            layout = item
-            break
-
-    return layout
-
-
-def set_project_variable(variable, value):
-    """ Set QGIS project variable """
-
-    QgsExpressionContextUtils.setProjectVariable(QgsProject.instance(), variable, value)
 
 
 # endregion
