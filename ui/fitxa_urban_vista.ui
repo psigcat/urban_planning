@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>FitxaUrban 2.0 - Visor de documents</string>
+   <string>Fitxa Urbanística - Visor de documents</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -63,47 +63,11 @@
        </property>
       </widget>
      </item>
-     <item>
-      <widget class="QPushButton" name="Sortir">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="minimumSize">
-        <size>
-         <width>33</width>
-         <height>33</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>33</width>
-         <height>33</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <family>Arial</family>
-         <pointsize>13</pointsize>
-         <weight>75</weight>
-         <bold>true</bold>
-        </font>
-       </property>
-       <property name="text">
-        <string>x</string>
-       </property>
-       <property name="autoDefault">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
     </layout>
    </item>
    <item>
-    <widget class="QWebView" name="webView" native="true">
-     <property name="url" stdset="0">
+    <widget class="QWebView" name="webView">
+     <property name="url">
       <url>
        <string>about:blank</string>
       </url>
@@ -116,7 +80,7 @@
   <customwidget>
    <class>QWebView</class>
    <extends>QWidget</extends>
-   <header>QtWebKit/QWebView</header>
+   <header location="global">QtWebKitWidgets/QWebView</header>
   </customwidget>
  </customwidgets>
  <resources/>

@@ -89,7 +89,7 @@
    </font>
   </property>
   <property name="windowTitle">
-   <string>FitxaUrban 2.0</string>
+   <string>Fitxa Urbanística</string>
   </property>
   <property name="windowOpacity">
    <double>10.000000000000000</double>
@@ -294,7 +294,7 @@
     <property name="geometry">
      <rect>
       <x>350</x>
-      <y>20</y>
+      <y>30</y>
       <width>91</width>
       <height>26</height>
      </rect>
@@ -491,7 +491,7 @@
     <property name="geometry">
      <rect>
       <x>350</x>
-      <y>20</y>
+      <y>30</y>
       <width>91</width>
       <height>26</height>
      </rect>
@@ -698,7 +698,7 @@
     <property name="geometry">
      <rect>
       <x>350</x>
-      <y>60</y>
+      <y>70</y>
       <width>91</width>
       <height>26</height>
      </rect>

@@ -21,14 +21,14 @@ def get_ui_class(ui_file_name):
     return uic.loadUiType(ui_file_path)[0]
 
 
-FORM_CLASS = get_ui_class('FitxaUrban_dialog.ui')
+FORM_CLASS = get_ui_class('fitxa_urban_dialog.ui')
 class FitxaUrbanDialog(QDialog, FORM_CLASS):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
 
 
-FORM_CLASS = get_ui_class('FitxaUrban_vista.ui')
+FORM_CLASS = get_ui_class('fitxa_urban_vista.ui')
 class FitxaUrbanVista(QDialog, FORM_CLASS):
     def __init__(self):
         super().__init__()
