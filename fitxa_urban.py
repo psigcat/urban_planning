@@ -10,7 +10,7 @@ from qgis.gui import QgsMapTool
 
 import os, socket, time, glob
 from functools import partial
-from .PyPDF2 import PdfFileMerger, PdfFileReader
+from .lib.PyPDF2 import PdfFileMerger, PdfFileReader
 
 from .lib.fitxa_urban_utils import open_file, center_map, move_layer, layout_item, get_print_layout, set_project_variable
 from .ui_manager import FitxaUrbanDialog
