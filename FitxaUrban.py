@@ -480,7 +480,15 @@ class FitxaUrban:
         self.dialog.setFixedSize(self.dialog.size())
         if self.dtop!= 0 and self.dleft != 0:
             self.dialog.setGeometry(self.dleft, self.dtop, self.dialog.width(), self.dialog.height())
-        self.dialog.label_5.setPixmap(QPixmap(self.get_parameter("ARXIU_LOGO")))
+
+        logo_file = self.get_parameter("ARXIU_LOGO")
+        if log_file.strip() == "":
+            logo_file = os.path.join(self.plugin_dir, "img", "ESC0401.png")
+        if not os.path.exists(logo_file):
+            self.show_message(f"File not found: {logo_file}")
+        else:
+            self.dialog.label_5.setPixmap(QPixmap(logo_file))
+
         self.dialog.rejected.connect(self.close_dialog)
         self.dialog.btn_pdf_annex.setEnabled(False)
 
@@ -576,10 +584,14 @@ class FitxaUrban:
             a = 1
 
         vl = self.iface.addVectorLayer("Polygon?crs=epsg:25831&field=id:integer&index=yes", "temp_print_polygon", "memory")
-        k = self.get_parameter("ARXIU_QML")
-        if k.strip() == "":
-            k=os.path.join(self.plugin_dir,"FitxaUrban.qml")
-        vl.loadNamedStyle(k)
+        qml_file = self.get_parameter("ARXIU_QML")
+        if qml_file.strip() == "":
+            qml_file = os.path.join(self.plugin_dir, "qml", "FitxaUrban.qml")
+        if not os.path.exists(qml_file):
+            self.show_message(f"File not found: {qml_file}")
+        else:
+            vl.loadNamedStyle(qml_file)
+
         vl.setName(self.get_parameter("SELEC_NAME"))
         pr = vl.dataProvider()
         fet = QgsFeature()
@@ -694,7 +706,7 @@ class FitxaUrbanTool(QgsMapTool):
         if str(self.plugin.config_data).find("ARXIU_PUNTER" + " = ") != -1:
             k = str(self.plugin.config_data).split("ARXIU_PUNTER" + " = ")[1].split("\n")[0]
         if k.strip() == "":
-            k=os.path.join(self.plugin.plugin_dir, "img", "FitxaUrban_punter.png")
+            k = os.path.join(self.plugin.plugin_dir, "img", "FitxaUrban_punter.png")
         self.setCursor(QCursor(QPixmap(k), 1, 1))
 
 

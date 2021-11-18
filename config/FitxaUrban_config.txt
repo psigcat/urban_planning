@@ -8,13 +8,13 @@ BD_PASS =
 BD_PORT =
 BD_SERVICE = gis_sjv
 
-# Arxiu logo client amb path absolut (si no s'informa no es visualitzarà cap logo)
-ARXIU_LOGO = C:\Dropbox\Projectes\PSIG\SJV\Modul_plan_urb\img\ESC0401.png
+# Arxiu logo client amb path absolut (si no s'informa agafa del directori del plugin: /img/ESC0401.png)
+ARXIU_LOGO =
 
-# Arxiu QML amb path absolut (si no s'informa agafa del directori del plugin FitxaUrban.qml)
+# Arxiu QML amb path absolut (si no s'informa agafa del directori del plugin: qml/FitxaUrban.qml)
 ARXIU_QML =
 
-# Directori imatge punter (si no s'informa agafa del directori del plugin FitxaUrban_punter.png)
+# Directori imatge punter (si no s'informa agafa del directori del plugin: img/FitxaUrban_punter.png)
 ARXIU_PUNTER =
 
 # Arxius amb els queries (si no s'informa agafa del directori del projecte FitxaUrban_sql.txt i FitxaUrban_sql_zona.txt)
