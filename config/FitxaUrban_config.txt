@@ -17,9 +17,11 @@ ARXIU_QML =
 # Directori imatge punter (si no s'informa agafa del directori del plugin: img/FitxaUrban_punter.png)
 ARXIU_PUNTER =
 
-# Arxius amb els queries (si no s'informa agafa del directori del projecte FitxaUrban_sql.txt i FitxaUrban_sql_zona.txt)
+# Arxius amb els queries
+# Si no s'informa agafa del directori del projecte FitxaUrban_sql.txt, FitxaUrban_sql_zona.txt i FitxaUrban_sql_classificacio.txt
 ARXIU_SQL =
 ARXIU_SQL_ZONA =
+ARXIU_SQL_CLASSIFICACIO =
 
 # Directori on hi han els arxius: condicions_generals.htm dotacio_aparcament.htm regulacio_aparcament.htm param_finca.htm i param_edificacio.htm
 #  (si no s'informa agafa del directori del projecte la carpeta "html")
