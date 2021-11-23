@@ -909,31 +909,25 @@
    <property name="title">
     <string>Sector</string>
    </property>
-   <widget class="QLineEdit" name="txtSector">
-    <property name="enabled">
-     <bool>false</bool>
+   <widget class="QLabel" name="label_9">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>20</y>
+      <width>91</width>
+      <height>21</height>
+     </rect>
     </property>
+    <property name="text">
+     <string>Codi - Nom:</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lbl_sector_1">
     <property name="geometry">
      <rect>
       <x>110</x>
       <y>20</y>
       <width>311</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>Georgia</family>
-      <pointsize>9</pointsize>
-     </font>
-    </property>
-   </widget>
-   <widget class="QLabel" name="lblSector">
-    <property name="geometry">
-     <rect>
-      <x>230</x>
-      <y>45</y>
-      <width>181</width>
       <height>20</height>
      </rect>
     </property>
@@ -957,20 +951,7 @@
      <string>&lt;a href='condicions_generals.htm'&gt;Veure Normativa sector&lt;/a&gt;</string>
     </property>
     <property name="alignment">
-     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_9">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>20</y>
-      <width>91</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Codi - Nom:</string>
+     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
     </property>
    </widget>
   </widget>
@@ -992,31 +973,25 @@
    <property name="title">
     <string>Classificació</string>
    </property>
-   <widget class="QLineEdit" name="txtClass">
-    <property name="enabled">
-     <bool>false</bool>
+   <widget class="QLabel" name="label_11">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>20</y>
+      <width>91</width>
+      <height>21</height>
+     </rect>
     </property>
+    <property name="text">
+     <string>Codi - Nom:</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="lbl_class_1">
     <property name="geometry">
      <rect>
       <x>110</x>
       <y>20</y>
-      <width>311</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>Georgia</family>
-      <pointsize>9</pointsize>
-     </font>
-    </property>
-   </widget>
-   <widget class="QLabel" name="lblClass">
-    <property name="geometry">
-     <rect>
-      <x>190</x>
-      <y>45</y>
-      <width>221</width>
+      <width>301</width>
       <height>20</height>
      </rect>
     </property>
@@ -1040,20 +1015,7 @@
      <string>&lt;a href='condicions_generals.htm'&gt;Veure Normativa classificació&lt;/a&gt;</string>
     </property>
     <property name="alignment">
-     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label_11">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>20</y>
-      <width>91</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Codi - Nom:</string>
+     <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
     </property>
    </widget>
   </widget>

@@ -491,7 +491,7 @@ class FitxaUrban:
         if not os.path.exists(logo_file):
             self.show_message("W", f"File not found: {logo_file}")
         else:
-            self.dialog.label_5.setPixmap(QPixmap(logo_file))
+            self.dialog.lbl_logo.setPixmap(QPixmap(logo_file))
 
         self.dialog.rejected.connect(self.close_dialog)
         self.dialog.btn_pdf_annex.setEnabled(False)
@@ -526,16 +526,17 @@ class FitxaUrban:
         self.dialog.area.setText(area)
         self.dialog.txtAdreca.setText(self.adreca)
         if self.sector_codi != "NULL": # It may not be part of any sector
-            self.dialog.txtSector.setText(f'{self.sector_codi} - {self.sector_desc}')
-            lbl_sector = u"<a href='file:///{:s}'>Veure normativa</a>".format(os.path.join(self.dir_sector,'{:s}.htm'.format('{}'.format(self.sector_codi))))
-            self.dialog.lblSector.setText(lbl_sector)
-            self.dialog.lblSector.linkActivated.connect(self.web_dialog)
+            file_sector = os.path.join(self.dir_sector,'{:s}.htm'.format('{}'.format(self.sector_codi)))
+            link_sector = f"<a href='file:///{file_sector}'>{self.sector_codi} - {self.sector_desc}</a>"
+            self.dialog.lbl_sector_1.setText(link_sector)
+            self.dialog.lbl_sector_1.linkActivated.connect(self.web_dialog)
         else:
-            self.dialog.lblSector.setHidden(True)
+            self.dialog.lbl_sector_1.setHidden(True)
 
-        self.dialog.txtClass.setText(f'{self.classi_codi} - {self.classi_desc}')
-        lbl_class = u"<a href='file:///{:s}'>Veure normativa</a>".format(os.path.join(self.dir_classi,'{:s}.htm'.format('{}'.format(self.classi_codi))))
-        self.dialog.lblClass.setText(lbl_class)
+        file_class = os.path.join(self.dir_classi,'{:s}.htm'.format('{}'.format(self.classi_codi)))
+        link_class = f"<a href='file:///{file_class}'>{self.classi_codi} - {self.classi_desc}</a>"
+        self.dialog.lbl_class_1.setText(link_class)
+        self.dialog.lbl_class_1.linkActivated.connect(self.web_dialog)
         self.codes = str(query.value(int(self.get_parameter("CODI_ZONES")))).replace("{", "").replace("}", "")
         self.percents = str(query.value(int(self.get_parameter("PERCENT_ZONES")))).replace("{", "").replace("}", "")
         self.general_codes = str(query.value(int(self.get_parameter("CODI_GENERAL_ZONES")))).replace("{", "").replace("}", "")
@@ -572,7 +573,6 @@ class FitxaUrban:
                 lblOrd.setHidden(True)
 
         # Connect the click signal to the functions
-        self.dialog.lblClass.linkActivated.connect(self.web_dialog)
         self.dialog.btnParcelaPdf.clicked.connect(partial(self.make_show_ubicacio_pdf, feature))
         self.dialog.btnClauPdf_1.clicked.connect(self.create_pdf_zones)
         self.dialog.btn_pdf_annex.clicked.connect(self.open_pdf_annex)
