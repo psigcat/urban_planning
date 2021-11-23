@@ -456,21 +456,57 @@ class FitxaUrban:
             self.show_message("C", "Manca paràmetre ID_INDEX")
             return
 
+        # Get query
+        self.id_selec = feature[id_index]
+        query = self.get_query()
+        if query is None:
+            return
+
+        # Set dialog and set its atributes
+        self.set_dialog()
+
+        # Fill GroupBox 'Ubicacio'
+        self.fill_ubicacio(query)
+
+        # Fill GroupBox 'Sector'
+        self.fill_sector(query)
+
+        # Fill GroupBox 'Classificacio'
+        self.fill_classificacio(query)
+
+        # Fill GroupBox 'Zones Planejament'
+        self.fill_zones_planejament()
+
+        # Fill GroupBox 'Annex'
+        self.fill_annex()
+
+        # Set signals
+        self.set_signals(feature)
+
+        query.clear()
+        self.dialog.show()
+
+
+    def get_query(self):
+
         global db
         query = QSqlQuery(db)
-        self.id_selec = feature[id_index]
         sql = self.sql_fitxa.replace('$ID_VALUE', str(self.id_selec))
         if query.exec_(sql) == 0:
             self.show_message("C", f"Error al llegir informació per fitxa\n\n{query.lastError().text()}")
-            return
+            return None
         if query.next() == 0:
             self.show_message("C", f"No s'ha trobat informació per fitxa\n\n{query.lastError().text()}")
-            return
+            return None
         if query.value(0) is None:
             self.show_message("C", "No s'ha trobat informació per la fitxa")
-            return
+            return None
 
-        # Make dialog and set its atributes
+        return query
+
+
+    def set_dialog(self):
+
         if self.dialog:
             try:
                 self.dtop = self.dialog.geometry().top()
@@ -493,38 +529,22 @@ class FitxaUrban:
         else:
             self.dialog.lbl_logo.setPixmap(QPixmap(logo_file))
 
-        self.dialog.rejected.connect(self.close_dialog)
-        self.dialog.btn_pdf_annex.setEnabled(False)
 
-        # Static links
-        link = f"<a href='file:///{self.dir_html}/condicions_generals.htm'>Condicions Generals</a>"
-        self.dialog.lblCondGenerals.setText(link)
-        self.dialog.lblCondGenerals.linkActivated.connect(self.web_dialog)
-        link = f"<a href='file:///{self.dir_html}/dotacio_aparcament.htm'>Dotació mínima d'aparcaments</a>"
-        self.dialog.lblDotacioAparc.setText(link)
-        self.dialog.lblDotacioAparc.linkActivated.connect(self.web_dialog)
-        link = f"<a href='file:///{self.dir_html}/regulacio_aparcament.htm'>Regulació particular de l'ús d'aparcaments</a>"
-        self.dialog.lblRegulacioAparc.setText(link)
-        self.dialog.lblRegulacioAparc.linkActivated.connect(self.web_dialog)
-        link = f"<a href='file:///{self.dir_html}/param_finca.htm'>Paràmetres Finca</a>"
-        self.dialog.lblParamFinca.setText(link)
-        self.dialog.lblParamFinca.linkActivated.connect(self.web_dialog)
-        link = f"<a href='file:///{self.dir_html}/param_edificacio.htm'>Paràmetres Edificació</a>"
-        self.dialog.lblParamEdificacio.setText(link)
-        self.dialog.lblParamEdificacio.linkActivated.connect(self.web_dialog)
+    def fill_ubicacio(self, query):
 
-        # Show data
         self.refcat = str(query.value(int(self.get_parameter("REFCAT"))))
         self.area = float(query.value(int(self.get_parameter("AREA"))))
         self.adreca = str(query.value(int(self.get_parameter("ADRECA"))))
-        self.sector_codi = str(query.value(int(self.get_parameter("CODI_SECTOR"))))
-        self.sector_desc = str(query.value(int(self.get_parameter("DESCR_SECTOR"))))
-        self.classi_codi = str(query.value(int(self.get_parameter("CODI_CLASSI"))))
-        self.classi_desc = str(query.value(int(self.get_parameter("DESCR_CLASSI"))))
         self.dialog.refcat.setText(self.refcat)
         area = (u'{}'.format(round(self.area,1))).rstrip('0').rstrip('.')
         self.dialog.area.setText(area)
         self.dialog.txtAdreca.setText(self.adreca)
+
+
+    def fill_sector(self, query):
+
+        self.sector_codi = str(query.value(int(self.get_parameter("CODI_SECTOR"))))
+        self.sector_desc = str(query.value(int(self.get_parameter("DESCR_SECTOR"))))
         if self.sector_codi != "NULL": # It may not be part of any sector
             file_sector = os.path.join(self.dir_sector,'{:s}.htm'.format('{}'.format(self.sector_codi)))
             link_sector = f"<a href='file:///{file_sector}'>{self.sector_codi} - {self.sector_desc}</a>"
@@ -533,6 +553,11 @@ class FitxaUrban:
         else:
             self.dialog.lbl_sector_1.setHidden(True)
 
+
+    def fill_classificacio(self, query):
+
+        self.classi_codi = str(query.value(int(self.get_parameter("CODI_CLASSI"))))
+        self.classi_desc = str(query.value(int(self.get_parameter("DESCR_CLASSI"))))
         file_class = os.path.join(self.dir_classi,'{:s}.htm'.format('{}'.format(self.classi_codi)))
         link_class = f"<a href='file:///{file_class}'>{self.classi_codi} - {self.classi_desc}</a>"
         self.dialog.lbl_class_1.setText(link_class)
@@ -540,13 +565,9 @@ class FitxaUrban:
         self.codes = str(query.value(int(self.get_parameter("CODI_ZONES")))).replace("{", "").replace("}", "")
         self.percents = str(query.value(int(self.get_parameter("PERCENT_ZONES")))).replace("{", "").replace("}", "")
         self.general_codes = str(query.value(int(self.get_parameter("CODI_GENERAL_ZONES")))).replace("{", "").replace("}", "")
-        query.clear()
 
-        # Enable button 'Obrir Annex' only for codes: '1a1', '3b1'
-        self.dialog.btn_pdf_annex.setEnabled(False)
-        self.log_info(self.codes)
-        if '1a1' in self.codes or '3b1' in self.codes:
-            self.dialog.btn_pdf_annex.setEnabled(True)
+
+    def fill_zones_planejament(self):
 
         for i in range(0, 4):
             txtClau = getattr(self.dialog, f'txtClau_{i + 1}')
@@ -572,12 +593,39 @@ class FitxaUrban:
             except IndexError:
                 lblOrd.setHidden(True)
 
-        # Connect the click signal to the functions
+        # Enable button 'Obrir Annex' only for codes: '1a1', '3b1'
+        self.dialog.btn_pdf_annex.setEnabled(False)
+        self.log_info(self.codes)
+        if '1a1' in self.codes or '3b1' in self.codes:
+            self.dialog.btn_pdf_annex.setEnabled(True)
+
+
+    def fill_annex(self):
+
+        link = f"<a href='file:///{self.dir_html}/condicions_generals.htm'>Condicions Generals</a>"
+        self.dialog.lblCondGenerals.setText(link)
+        self.dialog.lblCondGenerals.linkActivated.connect(self.web_dialog)
+        link = f"<a href='file:///{self.dir_html}/dotacio_aparcament.htm'>Dotació mínima d'aparcaments</a>"
+        self.dialog.lblDotacioAparc.setText(link)
+        self.dialog.lblDotacioAparc.linkActivated.connect(self.web_dialog)
+        link = f"<a href='file:///{self.dir_html}/regulacio_aparcament.htm'>Regulació particular de l'ús d'aparcaments</a>"
+        self.dialog.lblRegulacioAparc.setText(link)
+        self.dialog.lblRegulacioAparc.linkActivated.connect(self.web_dialog)
+        link = f"<a href='file:///{self.dir_html}/param_finca.htm'>Paràmetres Finca</a>"
+        self.dialog.lblParamFinca.setText(link)
+        self.dialog.lblParamFinca.linkActivated.connect(self.web_dialog)
+        link = f"<a href='file:///{self.dir_html}/param_edificacio.htm'>Paràmetres Edificació</a>"
+        self.dialog.lblParamEdificacio.setText(link)
+        self.dialog.lblParamEdificacio.linkActivated.connect(self.web_dialog)
+
+
+    def set_signals(self, feature):
+
+        self.dialog.rejected.connect(self.close_dialog)
+        self.dialog.btn_pdf_annex.setEnabled(False)
         self.dialog.btnParcelaPdf.clicked.connect(partial(self.make_show_ubicacio_pdf, feature))
         self.dialog.btnClauPdf_1.clicked.connect(self.create_pdf_zones)
         self.dialog.btn_pdf_annex.clicked.connect(self.open_pdf_annex)
-
-        self.dialog.show()
 
 
     def make_show_ubicacio_pdf(self, feature):
