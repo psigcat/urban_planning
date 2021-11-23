@@ -119,17 +119,17 @@ class FitxaUrban:
     def prepare_queries(self):
         """ Get database queries from configuration files """
 
-        self.sql_fitxa = self.read_sql_file("ARXIU_SQL", "FitxaUrban_sql.txt")
-        self.sql_fitxa_zona = self.read_sql_file("ARXIU_SQL_ZONA", "FitxaUrban_sql_zona.txt")
-        self.sql_fitxa_classificacio = self.read_sql_file("ARXIU_SQL_ZONA", "FitxaUrban_sql_classificacio.txt")
+        self.sql_fitxa = self.read_sql_file("SQL_GENERAL")
+        self.sql_fitxa_zona = self.read_sql_file("SQL_ZONA")
+        self.sql_fitxa_classificacio = self.read_sql_file("SQL_CLASSIFICACIO")
 
 
-    def read_sql_file(self, parameter, default_file):
+    def read_sql_file(self, parameter):
 
         sql_content = ""
         filepath = self.get_parameter(parameter)
         if filepath.strip() == "":
-            filepath = str(os.path.join(self.project_folder, "config", default_file))
+            filepath = str(os.path.join(self.project_folder, "config", parameter.lower()))
         if not os.path.exists(filepath):
             self.show_message("C", f"File not found:\n {filepath}")
             return
