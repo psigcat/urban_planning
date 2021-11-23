@@ -29,11 +29,14 @@ class FitxaUrban:
         self.settings = None
         self.action = None
         self.dialog = None
-        self.db_status = None
-        self.qgs_status = None
+        self.db_status = "NO"
+        self.qgs_status = "NO"
         self.config_data = None
         self.dtop = 0
         self.dleft = 0
+        self.sql_fitxa = None
+        self.sql_fitxa_zona = None
+        self.sql_fitxa_classificacio = None
 
 
     def initGui(self):
@@ -41,13 +44,7 @@ class FitxaUrban:
         self.plugin_dir = os.path.dirname(__file__)
         self.pluginName = os.path.basename(self.plugin_dir)
         self.settings = QSettings("PSIG", "FitxaUrban")
-        self.action = None
-        self.dialog = None
-        self.db_status = "NO"
-        self.qgs_status = "NO"
         self.config_data = self.read_config_file()
-        self.dtop = 0
-        self.dleft = 0
 
         filename = os.path.abspath(os.path.join(self.plugin_dir, "img", "FitxaUrban_logo.png"))
         self.icon = QIcon(filename)
@@ -122,35 +119,29 @@ class FitxaUrban:
     def prepare_queries(self):
         """ Get database queries from configuration files """
 
-        self.sql_fitxa = ""
-        ff = self.get_parameter("ARXIU_SQL")
-        if ff.strip() == "":
-            ff = str(os.path.join(self.project_folder, "config", "FitxaUrban_sql.txt"))
-        if not os.path.exists(ff):
-            self.show_message("C", f"File not found:\n {ff}")
+        self.sql_fitxa = self.read_sql_file("ARXIU_SQL", "FitxaUrban_sql.txt")
+        self.sql_fitxa_zona = self.read_sql_file("ARXIU_SQL_ZONA", "FitxaUrban_sql_zona.txt")
+        self.sql_fitxa_classificacio = self.read_sql_file("ARXIU_SQL_ZONA", "FitxaUrban_sql_classificacio.txt")
+
+
+    def read_sql_file(self, parameter, default_file):
+
+        sql_content = ""
+        filepath = self.get_parameter(parameter)
+        if filepath.strip() == "":
+            filepath = str(os.path.join(self.project_folder, "config", default_file))
+        if not os.path.exists(filepath):
+            self.show_message("C", f"File not found:\n {filepath}")
             return
-        f = open(ff, 'r')
+        f = open(filepath, 'r')
         if f.closed:
-            self.show_message("C", f"Error al llegir \n\n{ff}")
+            self.show_message("C", f"Error al llegir \n\n{filepath}")
             return
         for reg in f :
-            self.sql_fitxa += reg
+            sql_content += reg
         f.close()
 
-        self.sql_fitxa_zona = ""
-        ff = self.get_parameter("ARXIU_SQL_ZONA")
-        if ff.strip() == "":
-            ff = str(os.path.join(self.project_folder, "config", "FitxaUrban_sql_zona.txt"))
-        if not os.path.exists(ff):
-            self.show_message("C", f"File not found:\n {ff}")
-            return
-        f = open(ff, 'r')
-        if f.closed:
-            self.show_message("C", f"Error al llegir \n\n{ff}")
-            return
-        for reg in f :
-            self.sql_fitxa_zona += reg
-        f.close()
+        return sql_content
 
 
     def connect_db(self):
