@@ -449,26 +449,33 @@ class FitxaUrban:
             self.show_message("C", "Manca paràmetre ID_INDEX")
             return
 
-        # Get query
+        # Get id (field 'ninterno') of selected feature
         self.id_selec = feature[id_index]
-        query = self.get_query()
-        if query is None:
+        self.log_info(f"id_selec: {self.id_selec}")
+
+        # Get query "General"
+        query_general = self.get_query(self.sql_general, self.id_selec)
+        if query_general is None:
             return
+
+        # Get query "Classificacio"
+        self.id_selec = feature[id_index]
+        query_classificacio = self.get_query(self.sql_classificacio, self.id_selec)
 
         # Set dialog and set its atributes
         self.set_dialog()
 
         # Fill GroupBox 'Ubicacio'
-        self.fill_ubicacio(query)
+        self.fill_ubicacio(query_general)
 
         # Fill GroupBox 'Sector'
-        self.fill_sector(query)
+        self.fill_sector(query_general)
 
         # Fill GroupBox 'Classificacio'
-        self.fill_classificacio(query)
+        self.fill_classificacio(query_classificacio)
 
         # Fill GroupBox 'Zones Planejament'
-        self.fill_zones_planejament()
+        self.fill_zones_planejament(query_general)
 
         # Fill GroupBox 'Annex'
         self.fill_annex()
@@ -476,15 +483,15 @@ class FitxaUrban:
         # Set signals
         self.set_signals(feature)
 
-        query.clear()
+        query_general.clear()
         self.dialog.show()
 
 
-    def get_query(self):
+    def get_query(self, sql, id_selec):
 
         global db
         query = QSqlQuery(db)
-        sql = self.sql_fitxa.replace('$ID_VALUE', str(self.id_selec))
+        sql = sql.replace('$ID_VALUE', str(id_selec))
         if query.exec_(sql) == 0:
             self.show_message("C", f"Error al llegir informació per fitxa\n\n{query.lastError().text()}")
             return None
@@ -547,20 +554,44 @@ class FitxaUrban:
             self.dialog.lbl_sector_1.setHidden(True)
 
 
-    def fill_classificacio(self, query):
+    def fill_classificacio(self, query_classificacio):
+        """ Fill GroupBox 'Classificacio' """
 
-        self.classi_codi = str(query.value(int(self.get_parameter("CODI_CLASSI"))))
-        self.classi_desc = str(query.value(int(self.get_parameter("DESCR_CLASSI"))))
-        file_class = os.path.join(self.dir_classi,'{:s}.htm'.format('{}'.format(self.classi_codi)))
-        link_class = f"<a href='file:///{file_class}'>{self.classi_codi} - {self.classi_desc}</a>"
-        self.dialog.lbl_class_1.setText(link_class)
-        self.dialog.lbl_class_1.linkActivated.connect(self.web_dialog)
+        # Hide all widgets
+        for i in range(0, 3):
+            if hasattr(self.dialog, f"lbl_class_{i+1}"):
+                widget = getattr(self.dialog, f"lbl_class_{i+1}")
+                widget.setVisible(False)
+            if hasattr(self.dialog, f"lbl_class_{i+1}_perc"):
+                widget = getattr(self.dialog, f"lbl_class_{i+1}_perc")
+                widget.setVisible(False)
+
+        # Fill widgets
+        for i in range(0, query_classificacio.size()):
+            self.classi_codi = str(query_classificacio.value(0))
+            self.classi_desc = str(query_classificacio.value(1))
+            file_class = os.path.join(self.dir_classi, '{:s}.htm'.format('{}'.format(self.classi_codi)))
+            link_class = f"<a href='file:///{file_class}'>{self.classi_codi} - {self.classi_desc}</a>"
+            perc = query_classificacio.value(3)
+            if hasattr(self.dialog, f"lbl_class_{i+1}"):
+                widget = getattr(self.dialog, f"lbl_class_{i+1}")
+                widget.setText(link_class)
+                widget.linkActivated.connect(self.web_dialog)
+                widget.setVisible(True)
+            if hasattr(self.dialog, f"lbl_class_{i+1}_perc"):
+                widget = getattr(self.dialog, f"lbl_class_{i+1}_perc")
+                value = u'{:02.2f}'.format(float(perc))
+                widget.setText(f"{value} %")
+                widget.setVisible(True)
+
+            query_classificacio.next()
+
+
+    def fill_zones_planejament(self, query):
+
         self.codes = str(query.value(int(self.get_parameter("CODI_ZONES")))).replace("{", "").replace("}", "")
         self.percents = str(query.value(int(self.get_parameter("PERCENT_ZONES")))).replace("{", "").replace("}", "")
         self.general_codes = str(query.value(int(self.get_parameter("CODI_GENERAL_ZONES")))).replace("{", "").replace("}", "")
-
-
-    def fill_zones_planejament(self):
 
         for i in range(0, 4):
             txtClau = getattr(self.dialog, f'txtClau_{i + 1}')
