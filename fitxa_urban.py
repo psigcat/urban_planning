@@ -25,7 +25,7 @@ class FitxaUrban:
 
         self.iface = iface
         self.plugin_dir = None
-        self.pluginName = None
+        self.plugin_name = None
         self.settings = None
         self.action = None
         self.dialog = None
@@ -34,15 +34,15 @@ class FitxaUrban:
         self.config_data = None
         self.dtop = 0
         self.dleft = 0
-        self.sql_fitxa = None
-        self.sql_fitxa_zona = None
-        self.sql_fitxa_classificacio = None
+        self.sql_general = None
+        self.sql_zona = None
+        self.sql_classificacio = None
 
 
     def initGui(self):
 
         self.plugin_dir = os.path.dirname(__file__)
-        self.pluginName = os.path.basename(self.plugin_dir)
+        self.plugin_name = os.path.basename(self.plugin_dir)
         self.settings = QSettings("PSIG", "FitxaUrban")
         self.config_data = self.read_config_file()
 
@@ -53,7 +53,7 @@ class FitxaUrban:
         self.action.setCheckable(True)
         self.action.triggered.connect(self.activate_tool)
         self.iface.addToolBarIcon(self.action)
-        self.iface.addPluginToMenu("FichaUrban", self.action)
+        self.iface.addPluginToMenu("FitxaUrban", self.action)
         self.iface.mapCanvas().mapToolSet.connect(self.deactivate_tool)
 
 
@@ -78,9 +78,9 @@ class FitxaUrban:
         if self.dir_pdfs == "":
             self.dir_pdfs = os.path.join(self.project_folder, 'pdfs')
         d = QDir(self.dir_pdfs)
-        if d.exists() == 0 :
-            if d.mkdir(self.dir_pdfs) == 0 :
-                self.show_message("C", "No s'ha pogut crear carpeta directori pdf's\n\n" + self.dir_pdfs)
+        if d.exists() == 0:
+            if d.mkdir(self.dir_pdfs) == 0:
+                self.show_message("C", f"No s'ha pogut crear carpeta directori pdf's\n\n{self.dir_pdfs}")
                 return
         if self.get_parameter("DIR_PDFS_MULTI") == "SI":
             nl = socket.gethostname()+"("+time.strftime("%d")+")_"
@@ -119,9 +119,9 @@ class FitxaUrban:
     def prepare_queries(self):
         """ Get database queries from configuration files """
 
-        self.sql_fitxa = self.read_sql_file("SQL_GENERAL")
-        self.sql_fitxa_zona = self.read_sql_file("SQL_ZONA")
-        self.sql_fitxa_classificacio = self.read_sql_file("SQL_CLASSIFICACIO")
+        self.sql_general = self.read_sql_file("SQL_GENERAL")
+        self.sql_zona = self.read_sql_file("SQL_ZONA")
+        self.sql_classificacio = self.read_sql_file("SQL_CLASSIFICACIO")
 
 
     def read_sql_file(self, parameter):
@@ -129,7 +129,7 @@ class FitxaUrban:
         sql_content = ""
         filepath = self.get_parameter(parameter)
         if filepath.strip() == "":
-            filepath = str(os.path.join(self.project_folder, "config", parameter.lower()))
+            filepath = str(os.path.join(self.project_folder, "config", f"{parameter.lower()}.sql"))
         if not os.path.exists(filepath):
             self.show_message("C", f"File not found:\n {filepath}")
             return
@@ -181,7 +181,7 @@ class FitxaUrban:
         if not self.project_folder:
             return ""
 
-        config_path = str(os.path.join(self.project_folder, "config", "FitxaUrban_config.txt"))
+        config_path = str(os.path.join(self.project_folder, "config", f"{self.plugin_name}.config"))
         if not os.path.exists(config_path):
             self.show_message("C", f"File not found: {config_path}")
             return ""
@@ -303,7 +303,7 @@ class FitxaUrban:
         global db
 
         query = QSqlQuery(db)
-        sql = self.sql_fitxa_zona.replace('$ID_VALUE', str(self.id_selec))
+        sql = self.sql_zona.replace('$ID_VALUE', str(self.id_selec))
         if query.exec_(sql) == 0:
             msg = f"Error al llegir informació per fitxa zona\n\n{query.lastError().text()}"
             self.show_message("C", msg)
