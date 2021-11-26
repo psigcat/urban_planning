@@ -456,7 +456,7 @@ class FitxaUrban:
         self.log_info(f"id_selec: {self.id_selec}")
 
         # Get results of query "General"
-        query_general = self.get_query(self.sql_general, self.id_selec)
+        query_general = self.get_query(self.sql_general, self.id_selec, True)
         if query_general is None:
             return
 
@@ -495,7 +495,7 @@ class FitxaUrban:
         self.dialog.show()
 
 
-    def get_query(self, sql, id_selec):
+    def get_query(self, sql, id_selec, check_data=False):
 
         if sql is None:
             return None
@@ -506,12 +506,15 @@ class FitxaUrban:
         if query.exec_(sql) == 0:
             self.show_message("C", f"Error al llegir informació per fitxa\n\n{query.lastError().text()}")
             return None
-        if query.next() == 0:
-            self.show_message("C", f"No s'ha trobat informació per fitxa\n\n{query.lastError().text()}")
-            return None
-        if query.value(0) is None:
-            self.show_message("C", "No s'ha trobat informació per la fitxa")
-            return None
+
+        has_rows = query.next()
+        if check_data:
+            if has_rows == 0:
+                self.show_message("C", f"No s'ha trobat informació per fitxa\n\n{query.lastError().text()}")
+                return None
+            if query.value(0) is None:
+                self.show_message("C", "No s'ha trobat informació per la fitxa")
+                return None
 
         return query
 
@@ -579,9 +582,10 @@ class FitxaUrban:
                     widget.setVisible(True)
                 if hasattr(self.dialog, f"lbl_sector_{i+1}_perc"):
                     widget = getattr(self.dialog, f"lbl_sector_{i+1}_perc")
-                    value = u'{:02.2f}'.format(float(perc))
-                    widget.setText(f"{value} %")
-                    widget.setVisible(True)
+                    if perc:
+                        value = u'{:02.2f}'.format(float(perc))
+                        widget.setText(f"{value} %")
+                        widget.setVisible(True)
 
             query.next()
 
@@ -612,9 +616,10 @@ class FitxaUrban:
                 widget.setVisible(True)
             if hasattr(self.dialog, f"lbl_class_{i+1}_perc"):
                 widget = getattr(self.dialog, f"lbl_class_{i+1}_perc")
-                value = u'{:02.2f}'.format(float(perc))
-                widget.setText(f"{value} %")
-                widget.setVisible(True)
+                if perc:
+                    value = u'{:02.2f}'.format(float(perc))
+                    widget.setText(f"{value} %")
+                    widget.setVisible(True)
 
             query.next()
 
