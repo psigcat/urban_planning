@@ -38,6 +38,7 @@ class FitxaUrban:
         self.sql_general = None
         self.sql_sector = None
         self.sql_zona = None
+        self.area_classi = None
         self.descr_classi = None
         self.descr_sector = None
 
@@ -347,6 +348,7 @@ class FitxaUrban:
                 set_project_variable(sector_item, value)
 
             set_project_variable(self.get_parameter("DESCR_CLASSI_ITEM"), f'{self.descr_classi[:-2]}')
+            set_project_variable(self.get_parameter("AREA_CLASSI_ITEM"), f'{self.area_classi[:-2]}')
 
             # Get layout from field 'qg_tipus': 'zones' or 'sistemes'
             layout = layout_zones
@@ -609,6 +611,7 @@ class FitxaUrban:
 
         # Fill widgets
         self.descr_classi = ""
+        self.area_classi = ""
         for i in range(0, query.size()):
             codi = str(query.value(0))
             desc = str(query.value(1))
@@ -616,6 +619,7 @@ class FitxaUrban:
             self.descr_classi += f"{item}; "
             file = os.path.join(self.dir_classi, '{:s}.htm'.format('{}'.format(codi)))
             link = f"<a href='file:///{file}'>{item}</a>"
+            area = query.value(2)
             perc = query.value(3)
             if hasattr(self.dialog, f"lbl_class_{i+1}"):
                 widget = getattr(self.dialog, f"lbl_class_{i+1}")
@@ -625,18 +629,22 @@ class FitxaUrban:
             if hasattr(self.dialog, f"lbl_class_{i+1}_perc"):
                 widget = getattr(self.dialog, f"lbl_class_{i+1}_perc")
                 if perc:
-                    value = u'{:02.2f}'.format(float(perc))
-                    widget.setText(f"{value} %")
+                    area = u'{:02.2f}'.format(float(area))
+                    perc = u'{:02.2f}'.format(float(perc))
+                    item_area = f"{area} m2 ({perc} %)"
+                    self.area_classi += f"{item_area}; "
+                    widget.setText(f"{perc} %")
                     widget.setVisible(True)
 
             query.next()
 
 
     def fill_zones_planejament(self, query):
+        """ Fill GroupBox 'Zones Planejament' """
 
         self.codes = str(query.value(int(self.get_parameter("CODI_ZONES")))).replace("{", "").replace("}", "")
         self.percents = str(query.value(int(self.get_parameter("PERCENT_ZONES")))).replace("{", "").replace("}", "")
-        self.general_codes = str(query.value(int(self.get_parameter("CODI_GENERAL_ZONES")))).replace("{", "").replace("}", "")
+        general_codes = str(query.value(int(self.get_parameter("CODI_GENERAL_ZONES")))).replace("{", "").replace("}", "")
 
         for i in range(0, 4):
             txtClau = getattr(self.dialog, f'txtClau_{i + 1}')
@@ -651,12 +659,12 @@ class FitxaUrban:
             except IndexError:
                 txtPer.setHidden(True)
             try:
-                filename = f'{self.general_codes.split(",")[i]}.htm'
+                filename = f'{general_codes.split(",")[i]}.htm'
                 filepath = os.path.join(self.dir_orden, filename)
                 if os.path.isfile(filepath):
                     zz = f"<a href='file:///{filepath}'>{filename}</a>"
                 else:
-                    zz = self.general_codes.split(",")[i]
+                    zz = general_codes.split(",")[i]
                 lblOrd.setText(f'{zz}')
                 lblOrd.linkActivated.connect(self.web_dialog)
             except IndexError:
@@ -664,7 +672,6 @@ class FitxaUrban:
 
         # Enable button 'Obrir Annex' only for codes: '1a1', '3b1'
         self.dialog.btn_pdf_annex.setEnabled(False)
-        self.log_info(self.codes)
         if '1a1' in self.codes or '3b1' in self.codes:
             self.dialog.btn_pdf_annex.setEnabled(True)
 
