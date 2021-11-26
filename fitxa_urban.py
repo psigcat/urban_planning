@@ -194,7 +194,7 @@ class FitxaUrban:
         conf = ""
         for reg in f:
             if len(reg) > 5:
-                if reg[0] != "#" and reg.find(" = ") != -1:
+                if reg[0] != "#" and reg.find(" =") != -1:
                     conf += reg.strip()+"\n"
         f.close()
 
@@ -204,8 +204,10 @@ class FitxaUrban:
     def get_parameter(self, param):
         """ Get value of parameter @param from configuration file """
 
-        if self.config_data.find(param + " = ") == -1:
+        if self.config_data.find(param) == -1:
             self.log_info(f"Parameter not found: {param}")
+
+        if self.config_data.find(param + " = ") == -1:
             return ""
 
         value = self.config_data.split(param + " = ")[1].split("\n")[0].strip()
@@ -256,7 +258,7 @@ class FitxaUrban:
 
     def log_info(self, msg):
 
-        QgsMessageLog.logMessage(msg, None, 0)
+        QgsMessageLog.logMessage(str(msg), None, 0)
 
 
     def unload(self):
@@ -291,7 +293,7 @@ class FitxaUrban:
             z = "Avís"
 
         m.setWindowTitle(z)
-        m.setText(t)
+        m.setText(str(t))
         m.setStandardButtons(QMessageBox.Ok)
         b = m.button(QMessageBox.Ok)
         b.setText("Segueix")
