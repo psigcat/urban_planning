@@ -50,7 +50,7 @@ class FitxaUrban:
         self.settings = QSettings("PSIG", "FitxaUrban")
         self.config_data = self.read_config_file()
 
-        filename = os.path.abspath(os.path.join(self.plugin_dir, "img", "FitxaUrban_logo.png"))
+        filename = os.path.abspath(os.path.join(self.plugin_dir, "img", f"{self.plugin_name}_logo.png"))
         self.icon = QIcon(filename)
         self.tool = FitxaUrbanTool(self.iface.mapCanvas(), self)
         self.action = QAction(self.icon, "FitxaUrban", self.iface.mainWindow())
@@ -549,6 +549,7 @@ class FitxaUrban:
 
 
     def fill_ubicacio(self, query):
+        """ Fill GroupBox 'Ubicacio' """
 
         self.refcat = str(query.value(int(self.get_parameter("REFCAT"))))
         self.area = float(query.value(int(self.get_parameter("AREA"))))
@@ -677,6 +678,7 @@ class FitxaUrban:
 
 
     def fill_annex(self):
+        """ Fill GroupBox 'Annex' """
 
         link = f"<a href='file:///{self.dir_html}/condicions_generals.htm'>Condicions Generals</a>"
         self.dialog.lblCondGenerals.setText(link)
@@ -717,7 +719,7 @@ class FitxaUrban:
         vl = self.iface.addVectorLayer(temp_print_polygon_layer, "temp_print_polygon", "memory")
         qml_file = self.get_parameter("ARXIU_QML")
         if qml_file.strip() == "":
-            qml_file = os.path.join(self.plugin_dir, "qml", "FitxaUrban.qml")
+            qml_file = os.path.join(self.plugin_dir, "qml", f"{self.plugin_name}.qml")
         if not os.path.exists(qml_file):
             self.show_message(f"File not found: {qml_file}")
         else:

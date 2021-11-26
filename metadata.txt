@@ -1,9 +1,9 @@
 [general]
 name=urban_planning
 qgisMinimumVersion=3.10
-description=Creació d'una fitxa urbanistica de la parcela seleccionada.
-about=Aquest plugin crea una fitxa urbanistica per una parcela mostrant dades urbanistiques, classificacio del sol, sectors o ambits a desenvolupar, zonificacio i condicions de edificabilitat. Es mostra un resum en un formulari i es creen PDF's amb dades de la parcela i condicions de edificiabilitat i usos admesos.
-version=3.1
+description=Creació d'una fitxa urbanística de la parcela seleccionada.
+about=Aquest plugin crea una fitxa urbanística per una parcela mostrant dades urbanístiques, classificació del sol, sectors o àmbits a desenvolupar, zonificació i condicions d'edificabilitat. Es mostra un resum en un formulari i es creen PDF's amb dades de la parcela i condicions d'edificiabilitat i usos admesos.
+version=3.2
 author=PSIG
 email=admin@psig.es
 tags=catastro, gml, parcela, segregacion, matriz

@@ -16,7 +16,7 @@ class FitxaUrbanTool(QgsMapTool):
         if str(self.plugin.config_data).find("ARXIU_PUNTER" + " = ") != -1:
             k = str(self.plugin.config_data).split("ARXIU_PUNTER" + " = ")[1].split("\n")[0]
         if k.strip() == "":
-            k = os.path.join(self.plugin.plugin_dir, "img", "FitxaUrban_punter.png")
+            k = os.path.join(self.plugin.plugin_dir, "img", f"{self.plugin_name}_maptool.png")
         self.setCursor(QCursor(QPixmap(k), 1, 1))
 
 
