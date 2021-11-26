@@ -34,9 +34,10 @@ class FitxaUrban:
         self.config_data = None
         self.dtop = 0
         self.dleft = 0
-        self.sql_general = None
-        self.sql_zona = None
         self.sql_classificacio = None
+        self.sql_general = None
+        self.sql_sector = None
+        self.sql_zona = None
 
 
     def initGui(self):
@@ -119,9 +120,10 @@ class FitxaUrban:
     def prepare_queries(self):
         """ Get database queries from configuration files """
 
-        self.sql_general = self.read_sql_file("SQL_GENERAL")
-        self.sql_zona = self.read_sql_file("SQL_ZONA")
         self.sql_classificacio = self.read_sql_file("SQL_CLASSIFICACIO")
+        self.sql_general = self.read_sql_file("SQL_GENERAL")
+        self.sql_sector = self.read_sql_file("SQL_SECTOR")
+        self.sql_zona = self.read_sql_file("SQL_ZONA")
 
 
     def read_sql_file(self, parameter):
@@ -132,11 +134,11 @@ class FitxaUrban:
             filepath = str(os.path.join(self.project_folder, "config", f"{parameter.lower()}.sql"))
         if not os.path.exists(filepath):
             self.show_message("C", f"File not found:\n {filepath}")
-            return
+            return None
         f = open(filepath, 'r')
         if f.closed:
             self.show_message("C", f"Error al llegir \n\n{filepath}")
-            return
+            return None
         for reg in f :
             sql_content += reg
         f.close()
@@ -453,14 +455,20 @@ class FitxaUrban:
         self.id_selec = feature[id_index]
         self.log_info(f"id_selec: {self.id_selec}")
 
-        # Get query "General"
+        # Get results of query "General"
         query_general = self.get_query(self.sql_general, self.id_selec)
         if query_general is None:
             return
 
-        # Get query "Classificacio"
-        self.id_selec = feature[id_index]
+        # Get results of query "Classificacio"
         query_classificacio = self.get_query(self.sql_classificacio, self.id_selec)
+        if query_classificacio is None:
+            return
+
+        # Get results of query "Sector"
+        query_sector = self.get_query(self.sql_sector, self.id_selec)
+        if query_sector is None:
+            return
 
         # Set dialog and set its atributes
         self.set_dialog()
@@ -469,7 +477,7 @@ class FitxaUrban:
         self.fill_ubicacio(query_general)
 
         # Fill GroupBox 'Sector'
-        self.fill_sector(query_general)
+        self.fill_sector(query_sector)
 
         # Fill GroupBox 'Classificacio'
         self.fill_classificacio(query_classificacio)
@@ -488,6 +496,9 @@ class FitxaUrban:
 
 
     def get_query(self, sql, id_selec):
+
+        if sql is None:
+            return None
 
         global db
         query = QSqlQuery(db)
@@ -542,19 +553,40 @@ class FitxaUrban:
 
 
     def fill_sector(self, query):
+        """ Fill GroupBox 'Sector' """
 
-        self.sector_codi = str(query.value(int(self.get_parameter("CODI_SECTOR"))))
-        self.sector_desc = str(query.value(int(self.get_parameter("DESCR_SECTOR"))))
-        if self.sector_codi != "NULL": # It may not be part of any sector
-            file_sector = os.path.join(self.dir_sector,'{:s}.htm'.format('{}'.format(self.sector_codi)))
-            link_sector = f"<a href='file:///{file_sector}'>{self.sector_codi} - {self.sector_desc}</a>"
-            self.dialog.lbl_sector_1.setText(link_sector)
-            self.dialog.lbl_sector_1.linkActivated.connect(self.web_dialog)
-        else:
-            self.dialog.lbl_sector_1.setHidden(True)
+        # Hide all widgets
+        for i in range(0, 3):
+            if hasattr(self.dialog, f"lbl_sector_{i+1}"):
+                widget = getattr(self.dialog, f"lbl_sector_{i+1}")
+                widget.setVisible(False)
+            if hasattr(self.dialog, f"lbl_sector_{i+1}_perc"):
+                widget = getattr(self.dialog, f"lbl_sector_{i+1}_perc")
+                widget.setVisible(False)
+
+        # Fill widgets
+        for i in range(0, query.size()):
+            self.sector_codi = str(query.value(0))
+            self.sector_desc = str(query.value(1))
+            if self.sector_codi != "NULL":  # It may not be part of any sector
+                file = os.path.join(self.dir_sector, '{:s}.htm'.format('{}'.format(self.sector_codi)))
+                link = f"<a href='file:///{file}'>{self.sector_codi} - {self.sector_desc}</a>"
+                perc = query.value(3)
+                if hasattr(self.dialog, f"lbl_sector_{i+1}"):
+                    widget = getattr(self.dialog, f"lbl_sector_{i+1}")
+                    widget.setText(link)
+                    widget.linkActivated.connect(self.web_dialog)
+                    widget.setVisible(True)
+                if hasattr(self.dialog, f"lbl_sector_{i+1}_perc"):
+                    widget = getattr(self.dialog, f"lbl_sector_{i+1}_perc")
+                    value = u'{:02.2f}'.format(float(perc))
+                    widget.setText(f"{value} %")
+                    widget.setVisible(True)
+
+            query.next()
 
 
-    def fill_classificacio(self, query_classificacio):
+    def fill_classificacio(self, query):
         """ Fill GroupBox 'Classificacio' """
 
         # Hide all widgets
@@ -567,15 +599,15 @@ class FitxaUrban:
                 widget.setVisible(False)
 
         # Fill widgets
-        for i in range(0, query_classificacio.size()):
-            self.classi_codi = str(query_classificacio.value(0))
-            self.classi_desc = str(query_classificacio.value(1))
-            file_class = os.path.join(self.dir_classi, '{:s}.htm'.format('{}'.format(self.classi_codi)))
-            link_class = f"<a href='file:///{file_class}'>{self.classi_codi} - {self.classi_desc}</a>"
-            perc = query_classificacio.value(3)
+        for i in range(0, query.size()):
+            self.classi_codi = str(query.value(0))
+            self.classi_desc = str(query.value(1))
+            file = os.path.join(self.dir_classi, '{:s}.htm'.format('{}'.format(self.classi_codi)))
+            link = f"<a href='file:///{file}'>{self.classi_codi} - {self.classi_desc}</a>"
+            perc = query.value(3)
             if hasattr(self.dialog, f"lbl_class_{i+1}"):
                 widget = getattr(self.dialog, f"lbl_class_{i+1}")
-                widget.setText(link_class)
+                widget.setText(link)
                 widget.linkActivated.connect(self.web_dialog)
                 widget.setVisible(True)
             if hasattr(self.dialog, f"lbl_class_{i+1}_perc"):
@@ -584,7 +616,7 @@ class FitxaUrban:
                 widget.setText(f"{value} %")
                 widget.setVisible(True)
 
-            query_classificacio.next()
+            query.next()
 
 
     def fill_zones_planejament(self, query):
