@@ -11,15 +11,15 @@ import os, socket, time, glob
 from functools import partial
 from .lib.PyPDF2 import PdfFileMerger, PdfFileReader
 
-from .lib.fitxa_urban_utils import open_file, center_map, move_layer, layout_item, get_print_layout, set_project_variable
-from .ui_manager import FitxaUrbanDialog
-from .ui_manager import FitxaUrbanVista
-from .fitxa_urban_tool import FitxaUrbanTool
+from .ui_manager import MainDialog
+from .ui_manager import WebDialog
+from .urban_planning_tool import UrbanPlanningTool
+from .urban_planning_utils import open_file, center_map, move_layer, layout_item, get_print_layout, set_project_variable
 
 global db
 
 
-class FitxaUrban:
+class UrbanPlanning:
 
     def __init__(self, iface):
 
@@ -47,17 +47,17 @@ class FitxaUrban:
 
         self.plugin_dir = os.path.dirname(__file__)
         self.plugin_name = os.path.basename(self.plugin_dir)
-        self.settings = QSettings("PSIG", "FitxaUrban")
+        self.settings = QSettings("PSIG", "UrbanPlanning")
         self.config_data = self.read_config_file()
 
         filename = os.path.abspath(os.path.join(self.plugin_dir, "img", f"{self.plugin_name}_logo.png"))
         self.icon = QIcon(filename)
-        self.tool = FitxaUrbanTool(self.iface.mapCanvas(), self)
-        self.action = QAction(self.icon, "FitxaUrban", self.iface.mainWindow())
+        self.tool = UrbanPlanningTool(self.iface.mapCanvas(), self)
+        self.action = QAction(self.icon, "UrbanPlanning", self.iface.mainWindow())
         self.action.setCheckable(True)
         self.action.triggered.connect(self.activate_tool)
         self.iface.addToolBarIcon(self.action)
-        self.iface.addPluginToMenu("FitxaUrban", self.action)
+        self.iface.addPluginToMenu("UrbanPlanning", self.action)
         self.iface.mapCanvas().mapToolSet.connect(self.deactivate_tool)
 
 
@@ -157,8 +157,8 @@ class FitxaUrban:
         if self.db_status == "SI" :
             db.close()
             db = QSqlDatabase()
-            db.removeDatabase("FitxaUrban")
-        db = QSqlDatabase.addDatabase("QPSQL","FitxaUrban")
+            db.removeDatabase("UrbanPlanning")
+        db = QSqlDatabase.addDatabase("QPSQL","UrbanPlanning")
         if self.get_parameter("BD_SERVICE") == "" :
             db.setHostName(self.get_parameter("BD_HOST"))
             db.setDatabaseName(self.get_parameter("BD_DATABASE"))
@@ -273,13 +273,13 @@ class FitxaUrban:
         if self.db_status == "SI":
             db.close()
             db = QSqlDatabase()
-            db.removeDatabase("FitxaUrban")
+            db.removeDatabase("UrbanPlanning")
             self.db_status = "NO"
             self.qgs_status = "NO"
         self.action.setChecked(False)
         if self.dialog:
             self.close_dialog()
-        self.iface.removePluginMenu('FitxaUrban', self.action)
+        self.iface.removePluginMenu('UrbanPlanning', self.action)
         self.iface.removeToolBarIcon(self.action)
 
 
@@ -534,7 +534,7 @@ class FitxaUrban:
                 self.dtop = 0
                 self.dleft = 0
 
-        self.dialog = FitxaUrbanDialog()
+        self.dialog = MainDialog()
         self.dialog.setFixedSize(self.dialog.size())
         if self.dtop!= 0 and self.dleft != 0:
             self.dialog.setGeometry(self.dleft, self.dtop, self.dialog.width(), self.dialog.height())
@@ -782,7 +782,7 @@ class FitxaUrban:
     def web_dialog(self, url):
 
         self.log_info(f"Opened url: {url}")
-        dialog = FitxaUrbanVista()
+        dialog = WebDialog()
         dialog.webView.setUrl(QUrl(url))
         dialog.webView.setWhatsThis(url)
         dialog.Exportar.clicked.connect(partial(self.export_pdf, dialog))
