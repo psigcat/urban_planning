@@ -909,25 +909,12 @@
    <property name="title">
     <string>Sector</string>
    </property>
-   <widget class="QLabel" name="label_9">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>20</y>
-      <width>91</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Codi - Nom:</string>
-    </property>
-   </widget>
    <widget class="QLabel" name="lbl_sector_1">
     <property name="geometry">
      <rect>
-      <x>110</x>
+      <x>20</x>
       <y>20</y>
-      <width>251</width>
+      <width>341</width>
       <height>20</height>
      </rect>
     </property>
@@ -957,9 +944,9 @@
    <widget class="QLabel" name="lbl_sector_2">
     <property name="geometry">
      <rect>
-      <x>110</x>
+      <x>20</x>
       <y>50</y>
-      <width>251</width>
+      <width>341</width>
       <height>20</height>
      </rect>
     </property>
@@ -989,9 +976,9 @@
    <widget class="QLabel" name="lbl_sector_3">
     <property name="geometry">
      <rect>
-      <x>110</x>
+      <x>20</x>
       <y>80</y>
-      <width>251</width>
+      <width>341</width>
       <height>20</height>
      </rect>
     </property>
@@ -1076,25 +1063,12 @@
    <property name="title">
     <string>Classificació</string>
    </property>
-   <widget class="QLabel" name="label_11">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>20</y>
-      <width>91</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Codi - Nom:</string>
-    </property>
-   </widget>
    <widget class="QLabel" name="lbl_class_1">
     <property name="geometry">
      <rect>
-      <x>110</x>
+      <x>20</x>
       <y>20</y>
-      <width>251</width>
+      <width>341</width>
       <height>20</height>
      </rect>
     </property>
@@ -1124,9 +1098,9 @@
    <widget class="QLabel" name="lbl_class_2">
     <property name="geometry">
      <rect>
-      <x>110</x>
+      <x>20</x>
       <y>50</y>
-      <width>251</width>
+      <width>341</width>
       <height>20</height>
      </rect>
     </property>
@@ -1156,9 +1130,9 @@
    <widget class="QLabel" name="lbl_class_3">
     <property name="geometry">
      <rect>
-      <x>110</x>
+      <x>20</x>
       <y>80</y>
-      <width>241</width>
+      <width>331</width>
       <height>20</height>
      </rect>
     </property>
