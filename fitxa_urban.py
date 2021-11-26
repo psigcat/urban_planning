@@ -38,6 +38,8 @@ class FitxaUrban:
         self.sql_general = None
         self.sql_sector = None
         self.sql_zona = None
+        self.descr_classi = None
+        self.descr_sector = None
 
 
     def initGui(self):
@@ -340,11 +342,11 @@ class FitxaUrban:
                 set_project_variable(camps.split(",")[i], query.value(i))
                 sector_item = self.get_parameter("DESCR_SECTOR_ITEM")
                 value = None
-                if self.sector_codi != "NULL":
-                    value = f'{self.sector_codi} - {self.sector_desc}'
+                if self.descr_sector != "":
+                    value = f'{self.descr_sector[:-2]}'
                 set_project_variable(sector_item, value)
 
-            set_project_variable(self.get_parameter("DESCR_CLASSI_ITEM"), f'{self.classi_codi} - {self.classi_desc}')
+            set_project_variable(self.get_parameter("DESCR_CLASSI_ITEM"), f'{self.descr_classi[:-2]}')
 
             # Get layout from field 'qg_tipus': 'zones' or 'sistemes'
             layout = layout_zones
@@ -568,12 +570,15 @@ class FitxaUrban:
                 widget.setVisible(False)
 
         # Fill widgets
+        self.descr_sector = ""
         for i in range(0, query.size()):
-            self.sector_codi = str(query.value(0))
-            self.sector_desc = str(query.value(1))
-            if self.sector_codi != "NULL":  # It may not be part of any sector
-                file = os.path.join(self.dir_sector, '{:s}.htm'.format('{}'.format(self.sector_codi)))
-                link = f"<a href='file:///{file}'>{self.sector_codi} - {self.sector_desc}</a>"
+            codi = str(query.value(0))
+            desc = str(query.value(1))
+            item = f"{codi} - {desc}"
+            self.descr_sector += f"{item}; "
+            if codi != "NULL":  # It may not be part of any sector
+                file = os.path.join(self.dir_sector, '{:s}.htm'.format('{}'.format(codi)))
+                link = f"<a href='file:///{file}'>{item}</a>"
                 perc = query.value(3)
                 if hasattr(self.dialog, f"lbl_sector_{i+1}"):
                     widget = getattr(self.dialog, f"lbl_sector_{i+1}")
@@ -603,11 +608,14 @@ class FitxaUrban:
                 widget.setVisible(False)
 
         # Fill widgets
+        self.descr_classi = ""
         for i in range(0, query.size()):
-            self.classi_codi = str(query.value(0))
-            self.classi_desc = str(query.value(1))
-            file = os.path.join(self.dir_classi, '{:s}.htm'.format('{}'.format(self.classi_codi)))
-            link = f"<a href='file:///{file}'>{self.classi_codi} - {self.classi_desc}</a>"
+            codi = str(query.value(0))
+            desc = str(query.value(1))
+            item = f"{codi} - {desc}"
+            self.descr_classi += f"{item}; "
+            file = os.path.join(self.dir_classi, '{:s}.htm'.format('{}'.format(codi)))
+            link = f"<a href='file:///{file}'>{item}</a>"
             perc = query.value(3)
             if hasattr(self.dialog, f"lbl_class_{i+1}"):
                 widget = getattr(self.dialog, f"lbl_class_{i+1}")
