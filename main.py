@@ -41,6 +41,8 @@ class UrbanPlanning:
         self.area_classi = None
         self.descr_classi = None
         self.descr_sector = None
+        self.annex_sector_1 = ['PA-18', 'PA-19', 'PA-20', 'PA-28']
+        self.annex_sector_2 = ['PA-22', 'PA-23']
 
 
     def initGui(self):
@@ -111,7 +113,7 @@ class UrbanPlanning:
             self.dir_orden = os.path.join(self.dir_html, 'ordenacions')
         self.dir_annex = self.get_parameter("DIR_ANNEX")
         if self.dir_annex == "":
-            self.dir_annex = os.path.join(self.dir_html, 'annexos_claus')
+            self.dir_annex = os.path.join(self.dir_html, 'annexos')
         
         # Get database queries from configuration files
         self.prepare_queries()
@@ -401,7 +403,7 @@ class UrbanPlanning:
             open_file(filepath)
 
 
-    def open_pdf_annex(self):
+    def open_pdf_annex_clau(self):
         """ Open PDF file associated with code: '1a1', '3b1' """
 
         code = None
@@ -421,6 +423,39 @@ class UrbanPlanning:
 
         self.log_info(f"File opened: {filepath}")
         open_file(filepath)
+
+
+    def check_sectors(self):
+
+        set_a = set(self.codes_sector)
+        set_sector_1 = set(self.annex_sector_1)
+        set_sector_2 = set(self.annex_sector_2)
+        output_1 = False if (set_a.intersection(set_sector_1) == set()) else True
+        output_2 = False if (set_a.intersection(set_sector_2) == set()) else True
+        return output_1, output_2
+
+
+    def open_pdf_annex_sector(self):
+        """ Open PDF file associated with code: PA-18, PA-19, PA-20, PA-21. PA-22 i PA-23 """
+
+        output_1, output_2 = self.check_sectors()
+        self.log_info(output_1)
+        self.log_info(output_2)
+        if output_1:
+            filepath = os.path.join(self.dir_annex, f'annex_PA-18.pdf')
+            if not os.path.exists(filepath):
+                self.log_info(f"File not found: {filepath}")
+                return
+            self.log_info(f"File opened: {filepath}")
+            open_file(filepath)
+
+        if output_2:
+            filepath = os.path.join(self.dir_annex, f'annex_PA-22.pdf')
+            if not os.path.exists(filepath):
+                self.log_info(f"File not found: {filepath}")
+                return
+            self.log_info(f"File opened: {filepath}")
+            open_file(filepath)
 
 
     def run(self):
@@ -574,11 +609,13 @@ class UrbanPlanning:
 
         # Fill widgets
         self.descr_sector = ""
+        self.codes_sector = []
         for i in range(0, query.size()):
             codi = str(query.value(0))
             desc = str(query.value(1))
             item = f"{codi} - {desc}"
             self.descr_sector += f"{item}; "
+            self.codes_sector.append(codi)
             if codi != "NULL":  # It may not be part of any sector
                 file = os.path.join(self.dir_sector, '{:s}.htm'.format('{}'.format(codi)))
                 link = f"<a href='file:///{file}'>{item}</a>"
@@ -596,6 +633,12 @@ class UrbanPlanning:
                         widget.setVisible(True)
 
             query.next()
+
+        # Enable button 'Annex Sector' only sector codes of the lists: self.annex_sector_1 and self.annex_sector_2
+        self.dialog.btn_pdf_annex_sector.setEnabled(False)
+        output_1, output_2 = self.check_sectors()
+        if output_1 or output_2:
+            self.dialog.btn_pdf_annex_sector.setEnabled(True)
 
 
     def fill_classificacio(self, query):
@@ -671,10 +714,10 @@ class UrbanPlanning:
             except IndexError:
                 lblOrd.setHidden(True)
 
-        # Enable button 'Obrir Annex' only for codes: '1a1', '3b1'
-        self.dialog.btn_pdf_annex.setEnabled(False)
+        # Enable button 'Annex Clau' only for codes: '1a1', '3b1'
+        self.dialog.btn_pdf_annex_clau.setEnabled(False)
         if '1a1' in self.codes or '3b1' in self.codes:
-            self.dialog.btn_pdf_annex.setEnabled(True)
+            self.dialog.btn_pdf_annex_clau.setEnabled(True)
 
 
     def fill_annex(self):
@@ -700,10 +743,10 @@ class UrbanPlanning:
     def set_signals(self, feature):
 
         self.dialog.rejected.connect(self.close_dialog)
-        self.dialog.btn_pdf_annex.setEnabled(False)
-        self.dialog.btnParcelaPdf.clicked.connect(partial(self.make_show_ubicacio_pdf, feature))
-        self.dialog.btnClauPdf_1.clicked.connect(self.create_pdf_zones)
-        self.dialog.btn_pdf_annex.clicked.connect(self.open_pdf_annex)
+        self.dialog.btn_pdf_ubicacio.clicked.connect(partial(self.make_show_ubicacio_pdf, feature))
+        self.dialog.btn_pdf_zones.clicked.connect(self.create_pdf_zones)
+        self.dialog.btn_pdf_annex_clau.clicked.connect(self.open_pdf_annex_clau)
+        self.dialog.btn_pdf_annex_sector.clicked.connect(self.open_pdf_annex_sector)
 
 
     def make_show_ubicacio_pdf(self, feature):

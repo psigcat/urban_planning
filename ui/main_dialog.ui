@@ -290,17 +290,17 @@
    <property name="title">
     <string>Ubicació (dades cadastrals)</string>
    </property>
-   <widget class="QPushButton" name="btnParcelaPdf">
+   <widget class="QPushButton" name="btn_pdf_ubicacio">
     <property name="geometry">
      <rect>
-      <x>330</x>
+      <x>320</x>
       <y>25</y>
-      <width>91</width>
+      <width>101</width>
       <height>31</height>
      </rect>
     </property>
     <property name="text">
-     <string>Obrir PDF</string>
+     <string>PDF Ubicació</string>
     </property>
    </widget>
    <widget class="QLabel" name="label">
@@ -487,17 +487,17 @@
      </rect>
     </property>
    </widget>
-   <widget class="QPushButton" name="btnClauPdf_1">
+   <widget class="QPushButton" name="btn_pdf_zones">
     <property name="geometry">
      <rect>
-      <x>330</x>
+      <x>320</x>
       <y>20</y>
-      <width>91</width>
+      <width>101</width>
       <height>31</height>
      </rect>
     </property>
     <property name="text">
-     <string>Obrir PDF</string>
+     <string>PDF Zones</string>
     </property>
    </widget>
    <widget class="QLineEdit" name="txtClau_2">
@@ -694,17 +694,30 @@
      <string>&lt;a href='condicions_generals.htm'&gt;ORD&lt;/a&gt;</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="btn_pdf_annex">
+   <widget class="QPushButton" name="btn_pdf_annex_clau">
     <property name="geometry">
      <rect>
-      <x>330</x>
+      <x>320</x>
       <y>60</y>
-      <width>91</width>
+      <width>101</width>
       <height>31</height>
      </rect>
     </property>
     <property name="text">
-     <string>Obrir Annex</string>
+     <string>Annex Clau</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="btn_pdf_annex_sector">
+    <property name="geometry">
+     <rect>
+      <x>320</x>
+      <y>100</y>
+      <width>101</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Annex Sector</string>
     </property>
    </widget>
   </widget>
