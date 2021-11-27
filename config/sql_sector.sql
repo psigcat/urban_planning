@@ -4,5 +4,6 @@ SELECT c.codi AS codi, c.descripcio AS descr,
 FROM planejament_urba.sectors_urbanistics AS c, carto.parcela as p
 WHERE p.ninterno = $ID_VALUE
     AND ST_Intersects(p.geom, c.geom)
+    AND (ST_Area(ST_Intersection(c.geom, p.geom)) / p.area) * 100 > 3
 ORDER BY ST_Area(ST_Intersection(c.geom, p.geom)) DESC
 LIMIT 3
