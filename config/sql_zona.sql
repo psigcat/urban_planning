@@ -12,7 +12,7 @@ SELECT q.codi AS qua_codi, q.descripcio AS qua_descripcio, ST_Area(ST_Multi(ST_I
        u.serveis_ambientals, u.serveis_radio, u.aparcament, u.estacions_servei, u.agricola, u.ramader, u.forestal, u.lleure, u.ecologic,
        -- Condicions edificació
        ce.fondaria_edif, ce.edificabilitat, ce.ocupacio, ce.densitat_hab, ce.vol_max_edif, ce.fondaria_edif_pb, ce.pb, ce.alcada, ce.punt_aplic, ce.sep_min, 
-       ce.constr_aux_alcada, ce.constr_auxo_cupacio, ce.tanques, ce.nplantes, ce.alcada_lliure, ce.entresol_pb, ce.sotacoberta, ce.pendent,
+       ce.constr_aux_alcada, ce.constr_aux_ocupacio, ce.tanques, ce.nplantes, ce.alcada_lliure, ce.entresol_pb, ce.sotacoberta, ce.pendent,
        ce.terrasses, ce.elem_sort, ce.cossos_sort, ce.cossos_annexes, ce.porxos, ce.tract_facana, ce.comp_facana, ce.prop_obertura, ce.material_facana,
        ce.material_coberta, ce.fusteria, ce.espai_lliure, ce.altell, ce.altres, 
        -- Condicions de parcela cp.prof_min
