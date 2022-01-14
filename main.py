@@ -41,7 +41,7 @@ class UrbanPlanning:
         self.area_classi = None
         self.descr_classi = None
         self.descr_sector = None
-        self.annex_sector_1 = ['PA-18', 'PA-19', 'PA-20', 'PA-28']
+        self.annex_sector_1 = ['PA-18', 'PA-19', 'PA-20', 'PA-21']
         self.annex_sector_2 = ['PA-22', 'PA-23']
 
 
