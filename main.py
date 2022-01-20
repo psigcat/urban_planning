@@ -41,8 +41,9 @@ class UrbanPlanning:
         self.area_classi = None
         self.descr_classi = None
         self.descr_sector = None
-        self.annex_sector_1 = ['PA-18', 'PA-19', 'PA-20', 'PA-21']
-        self.annex_sector_2 = ['PA-22', 'PA-23']
+        self.annex_sector_1 = None
+        self.annex_sector_2 = None
+        self.annex_claus = None
 
 
     def initGui(self):
@@ -114,7 +115,31 @@ class UrbanPlanning:
         self.dir_annex = self.get_parameter("DIR_ANNEX")
         if self.dir_annex == "":
             self.dir_annex = os.path.join(self.dir_html, 'annexos')
-        
+
+        # Manage annexos for 'sectors' and 'qualificacions'
+        default_annex_sector_1 = 'PA-18, PA-19, PA-20, PA-21'
+        default_annex_sector_2 = 'PA-22, PA-23'
+        default_annex_claus = '1a1, 3a1, -5d-, -5d-5dHPP-'
+
+        aux = self.get_parameter("ANNEX_SECTOR_1")
+        if aux == '':
+            aux = default_annex_sector_1
+        aux = aux.split(",")
+        self.annex_sector_1 = [x.strip(' ') for x in aux]
+        self.log_info(self.annex_sector_1)
+
+        aux = self.get_parameter("ANNEX_SECTOR_2")
+        if aux == '':
+            aux = default_annex_sector_2
+        aux = aux.split(",")
+        self.annex_sector_2 = [x.strip(' ') for x in aux]
+
+        aux = self.get_parameter("ANNEX_CLAUS")
+        if aux == '':
+            aux = default_annex_claus
+        aux = aux.split(",")
+        self.annex_claus = [x.strip(' ') for x in aux]
+
         # Get database queries from configuration files
         self.prepare_queries()
 
@@ -404,25 +429,17 @@ class UrbanPlanning:
 
 
     def open_pdf_annex_clau(self):
-        """ Open PDF file associated with code: '1a1', '3b1' """
+        """ Open PDF file associated with one or more of the codes of the list @self.annex_claus """
 
         code = None
-        if '1a1' in self.codes:
-            code = '1a1'
-        elif '3b1' in self.codes:
-            code = '3b1'
-
-        if code is None:
-            self.log_info(f"Code not found: {code}")
-            return
-
-        filepath = os.path.join(self.dir_annex, f'annex_{code}.pdf')
-        if not os.path.exists(filepath):
-            self.log_info(f"File not found: {filepath}")
-            return
-
-        self.log_info(f"File opened: {filepath}")
-        open_file(filepath)
+        for code in self.annex_claus:
+            if code in self.codes:
+                filepath = os.path.join(self.dir_annex, f'annex_{code}.pdf')
+                if not os.path.exists(filepath):
+                    self.log_info(f"File not found: {filepath}")
+                else:
+                    self.log_info(f"File opened: {filepath}")
+                    open_file(filepath)
 
 
     def check_sectors(self):
@@ -686,7 +703,8 @@ class UrbanPlanning:
     def fill_zones_planejament(self, query):
         """ Fill GroupBox 'Zones Planejament' """
 
-        self.codes = str(query.value(int(self.get_parameter("CODI_ZONES")))).replace("{", "").replace("}", "")
+        codes = str(query.value(int(self.get_parameter("CODI_ZONES")))).replace("{", "").replace("}", "")
+        self.codes = codes.split(",")
         self.percents = str(query.value(int(self.get_parameter("PERCENT_ZONES")))).replace("{", "").replace("}", "")
         general_codes = str(query.value(int(self.get_parameter("CODI_GENERAL_ZONES")))).replace("{", "").replace("}", "")
 
@@ -695,7 +713,7 @@ class UrbanPlanning:
             txtPer = getattr(self.dialog, f'txtPer_{i + 1}')
             lblOrd = getattr(self.dialog, f'lblOrd_{i + 1}')
             try:
-                txtClau.setText(f'{self.codes.split(",")[i]}')
+                txtClau.setText(f'{self.codes[i]}')
             except IndexError:
                 txtClau.setHidden(True)
             try:
@@ -714,10 +732,9 @@ class UrbanPlanning:
             except IndexError:
                 lblOrd.setHidden(True)
 
-        # Enable button 'Annex Clau' only for codes: '1a1', '3b1'
-        self.dialog.btn_pdf_annex_clau.setEnabled(False)
-        if '1a1' in self.codes or '3b1' in self.codes:
-            self.dialog.btn_pdf_annex_clau.setEnabled(True)
+        # Enable button 'Annex Clau' only if we have in code that is in list self.annex_claus
+        is_enabled = any(item in self.codes for item in self.annex_claus)
+        self.dialog.btn_pdf_annex_clau.setEnabled(is_enabled)
 
 
     def fill_annex(self):
