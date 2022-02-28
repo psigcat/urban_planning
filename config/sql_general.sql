@@ -1,13 +1,13 @@
   WITH
     _parcela AS (
       SELECT refcat, geom, ST_Area(geom) as area, numero, via AS id_via
-      FROM carto.parcela
+      FROM cadastre.parcela
       WHERE ninterno=$ID_VALUE
       LIMIT 1
     ),
     _quali AS (
       SELECT __quali.codi AS codi, SUM(ST_Area(ST_Intersection(_parcela.geom, __quali.geom))) AS area
-      FROM carto.qualificacions AS __quali, _parcela
+      FROM planejament_urba.qualificacio AS __quali, _parcela
       WHERE ST_Intersects(_parcela.geom, __quali.geom)
       GROUP BY __quali.codi
     )
@@ -29,7 +29,7 @@
 
     LEFT JOIN ( -- Subquery per aconseguir a quin sector partany el terreny
       SELECT codi, descripcio AS descr
-      FROM carto.sectors, _parcela
+      FROM planejament_urba.sectors_urbanistics, _parcela
       WHERE ST_Intersects(_parcela.geom, sectors.geom)
       -- Hi pot haver petits errors deguts al mapa. Utilitzem el sector amb més area
       ORDER BY ST_Area(ST_Intersection(sectors.geom, _parcela.geom)) DESC
@@ -61,7 +61,7 @@
               FROM _quali
             ) AS _ ON TRUE
           ) AS __
-          WHERE percent>=3
+          WHERE percent>=2
           ORDER BY percent DESC, codi ASC
           LIMIT 4
         )
