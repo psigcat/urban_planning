@@ -17,12 +17,12 @@ SELECT q.codi AS qua_codi, q.descripcio AS qua_descripcio, ST_Area(ST_Multi(ST_I
        ce.material_coberta, ce.fusteria, ce.espai_lliure, ce.altell, ce.altres, 
        -- Condicions de parcela cp.prof_min
        cp.front_min, cp.parce_min, cp.prof_min, cp.circum_finsc
-  FROM carto.parcela AS p, carto.qualificacions AS q
-       INNER JOIN data.qualificacio_general AS qg ON q.codi = qg.id
-       LEFT JOIN data.tipus_ordenacio AS tord ON qg.cod_ord = tord.cod_ord
-       LEFT JOIN data.usos as u ON qg.id = u.id
-       LEFT JOIN data.condicions_edif as ce ON qg.id = ce.id
-       LEFT JOIN data.condicions_parce as cp ON qg.id = cp.id
+  FROM cadsatre.parcela AS p, planejament_urba.qualificacio AS q
+       INNER JOIN planejament_urba.qualificacio_general AS qg ON q.codi = qg.id
+       LEFT JOIN planejament_urba.tipus_ordenacio AS tord ON qg.cod_ord = tord.cod_ord
+       LEFT JOIN planejament_urba.usos as u ON qg.id = u.id
+       LEFT JOIN planejament_urba.condicions_edif as ce ON qg.id = ce.id
+       LEFT JOIN planejament_urba.condicions_parce as cp ON qg.id = cp.id
   WHERE p.ninterno = $ID_VALUE
         AND ST_Intersects(p.geom, q.geom)
   ORDER BY area_int DESC
