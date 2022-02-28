@@ -70,7 +70,7 @@
         ARRAY(SELECT percent FROM _2_) AS percent_zones,
         ARRAY(
           SELECT COALESCE(cod_ord, codi, '<error>')
-          FROM data.qualificacio_general, _2_
+          FROM planejament_urba.qualificacio_general, _2_
           WHERE qualificacio_general.id = _2_.codi
           ORDER BY _2_.percent DESC, _2_.codi ASC
         ) AS codi_general_zones
