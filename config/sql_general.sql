@@ -30,9 +30,9 @@
     LEFT JOIN ( -- Subquery per aconseguir a quin sector partany el terreny
       SELECT codi, descripcio AS descr
       FROM planejament_urba.sectors_urbanistics, _parcela
-      WHERE ST_Intersects(_parcela.geom, sectors.geom)
+      WHERE ST_Intersects(_parcela.geom, planejament_urba.sectors_urbanistics.geom)
       -- Hi pot haver petits errors deguts al mapa. Utilitzem el sector amb més area
-      ORDER BY ST_Area(ST_Intersection(sectors.geom, _parcela.geom)) DESC
+      ORDER BY ST_Area(ST_Intersection(planejament_urba.sectors_urbanistics.geom, _parcela.geom)) DESC
       LIMIT 1
     ) AS _sector ON TRUE
 
